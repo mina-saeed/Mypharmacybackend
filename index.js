@@ -4,7 +4,8 @@ var passport = require('passport');
 var Strategy = require('passport-facebook').Strategy;
 var bodyParser = require("body-parser");
 var MongoClient = require('mongodb').MongoClient;
-var url = "mongodb://localhost:27017/pharmacy";
+var url = "mongodb://localhost:27017/mypharmacy";
+
 
 var app = express()
 
@@ -31,7 +32,6 @@ passport.use(new Strategy({
                         }
 
                 MongoClient.connect(url, function(err, db) {
-
                         if (err) throw err;
                                 var user = { 
                                         fb_id: profile.id,
@@ -43,9 +43,11 @@ passport.use(new Strategy({
 
                                  };
                                  db.collection('users').find({fb_id: profile.id}).toArray(function(err, result){
-                                                if (err)
+                                                if (err){
                                                         return cb(err);
+                                                }
                                                 if(result){
+
                                                         return cb(null, user); // user found, return that user
                                                 }
                                                 else{
@@ -53,7 +55,7 @@ passport.use(new Strategy({
                                                         if (err){
                                                         }else{
                                                               //  console.log(res)
-                                                                console.log("1 record inserted");
+                                                                console.log("1 user Added");
                                                                 
                                                         }
                                 
@@ -70,10 +72,11 @@ passport.use(new Strategy({
 
 app.get('/login/facebook', passport.authenticate('facebook' , {scope:'email'}));
 app.get('/login', passport.authenticate('facebook' , {scope:'email'}));
-app.get('/auth/facebook/callback', passport.authenticate('facebook', { successRedirect : '/',failureRedirect: '/login' }),function(req, res) {console.log("res") });
+app.get('/auth/facebook/callback', passport.authenticate('facebook', { successRedirect : '/home',failureRedirect: '/login' }),function(req, res) {console.log("res") });
 
-app.get('/', function(req,res){
-res.redirect('/')
+app.get('/home', function(req,res){
+    console.log("Done")
+res.redirect('/info')
 })
 
 
