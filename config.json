@@ -2,6 +2,8 @@
 
     "AppId":"1568720839858802",
     "AppSecret":"b65934f064b28faa71100d1c0b0c8717",
-    "callback":"http://localhost:3000/auth/facebook/callback"
+
+    "callback":"http://207.154.240.16:3000/auth/facebook/callback"
+
 
 }
