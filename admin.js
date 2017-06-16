@@ -3,7 +3,7 @@ var express = require('express');
 
 var bodyParser = require("body-parser");
 var MongoClient = require('mongodb').MongoClient;
-var url = "mongodb://localhost:27017/pharmacy";
+var url = "mongodb://localhost:27017/mypharmacy";
 const basicAuth = require('./basicAuth.js')
 
 var app = express()
@@ -23,6 +23,7 @@ var staticUserAuth = basicAuth({
     },
     challenge: true
 })
+
 
 /******************************* Start Of Login Endpoint ****************************************************/
 app.post('/register/admin', staticUserAuth, function(req, res) {
@@ -78,8 +79,8 @@ MongoClient.connect(url, function(err, db) {
             res.send("user name or password nt correct")
         }
         if(result.length >0){
-            console.log(result)
-            res.send("user already exists")
+                
+                res.redirect('/adminHome')
         }
         else{
             res.send(" invalid username or password")
@@ -99,6 +100,7 @@ app.post('/admin/new', staticUserAuth, function(req, res) {
     var medicine_category = req.body.category
     var medicine_description = req.body.description
     var medicine_barcode = req.body.barcode
+    var medicine_price = req.body.price
     var medicine_milligrams = req.body.milligrams
 
 MongoClient.connect(url, function(err, db) {    
@@ -117,6 +119,7 @@ MongoClient.connect(url, function(err, db) {
                 category: medicine_category,
                 description: medicine_description,
                 barcode : medicine_barcode,
+                price: medicine_price,
                 milligrams : medicine_milligrams
 
             };
@@ -128,8 +131,7 @@ MongoClient.connect(url, function(err, db) {
                     console.log(err)
                 }else{
 
-                    console.log("one medicine has been added")
-                    res.redirect('/adminHome')
+                    res.send('one medicine has been added')
                 }
             })
         }
@@ -139,8 +141,31 @@ MongoClient.connect(url, function(err, db) {
 })
 /*--------------------------- end of create new product ------------------------------------*/
 
+/*--------------------------- Start Of Confirm pharmacy ------------------------------------*/
+app.post('/admin/confirmPharmacy', staticUserAuth, function(req, res) {
+
+    var pharmacy_name = req.body.name
+    var pharmacy_active = req.body.active
+
+    MongoClient.connect(url, function(err, db) {
+        db.collection('pharmacy').update(
+                {name: pharmacy_name},
+                {$set:
+                        {active: pharmacy_active}
+                },
+                function(err, result){
+                        if(err) throw err
+                        if(result){
+                                res.send("Pharmacy Activated")
+                        }        
+                }
+        )
+                        
+   });   
+})
+/*--------------------------- end of confirm pharmacy ------------------------------------*/
 
 
 app.listen(3001, function() {
-    console.log("Listening!")
+    console.log("Listening To Admin API !")
 })
