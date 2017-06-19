@@ -77,10 +77,10 @@ passport.use(new Strategy({
 
 app.get('/login/facebook', passport.authenticate('facebook' , {scope:'email'}));
 app.get('/login', passport.authenticate('facebook' , {scope:'email'}));
-app.get('/auth/facebook/callback', passport.authenticate('facebook', { successRedirect : '/home',failureRedirect: '/login' }),function(req, res) {console.log("res") });
+app.get('/auth/facebook/callback', passport.authenticate('facebook', { successRedirect : '/userHome',failureRedirect: '/login' }),function(req, res) {console.log("res") });
 
-app.get('/home', function(req,res){
-res.redirect('/home')
+app.get('/userHome', function(req,res){
+res.redirect('/userHome')
 })
 
 
@@ -100,7 +100,7 @@ MongoClient.connect(url, function(err, db) {
         }
         if(result){
             //console.log(result)
-            res.redirect('/order')
+            res.redirect('/userHome')
         }
         if(result==null){
             var guest={
@@ -117,7 +117,7 @@ MongoClient.connect(url, function(err, db) {
                 }else{
 
                     console.log("Guest has been added")
-                    res.redirect('/order')
+                    res.redirect('/userHome')
                 }
             })
         }
