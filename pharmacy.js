@@ -86,7 +86,7 @@ app.post('/login/pharmacy', staticUserAuth, function(req, res) {
     var pharma_name = req.body.name
     var pharma_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
 MongoClient.connect(url, function(err, db) {    
-    db.collection('pharmacy').find({name: pharma_name , password: pharma_password , active: 1}).toArray(function(err, result){
+    db.collection('pharmacy').find({name: pharma_name , password: pharma_password , active: 1 }).toArray(function(err, result){
 
         if(err){
             res.send("Error !!")
