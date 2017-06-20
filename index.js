@@ -4,7 +4,7 @@ var passport = require('passport');
 var Strategy = require('passport-facebook').Strategy;
 var bodyParser = require("body-parser");
 var MongoClient = require('mongodb').MongoClient;
-var url = "mongodb://localhost:27017/mypharmacy";
+var url = "mongodb://localhost:27017/pharmacy";
 const basicAuth = require('./basicAuth.js')
 
 var app = express()
@@ -98,11 +98,11 @@ MongoClient.connect(url, function(err, db) {
         if(err){
             res.send("Error")
         }
-        if(result){
-            //console.log(result)
+        if(result.length>0){
+     
             res.redirect('/userHome')
         }
-        if(result==null){
+        if(result.length==0){
             var guest={
                 name: guest_name,
                 mobile: guest_mobile,
