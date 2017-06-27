@@ -1,5 +1,7 @@
 const config = require('./config.json')
+var cors = require('cors')
 const express = require('express');
+
 const datetime = require('node-datetime');
 const bodyParser = require("body-parser");
 const MongoClient = require('mongodb').MongoClient;
@@ -17,11 +19,9 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.use(bodyParser.json());
+app.use(session({secret: 'test'}));
 
-app.use(function(req, res, next) {
-        res.header('Access-Control-Allow-Origin', '*')
-        next();
-});
+app.use(cors())
 
 var staticUserAuth = basicAuth({
         users: {
@@ -76,59 +76,87 @@ app.post('/register', staticUserAuth, function(req, res) {
         }
 })
 /*******************************************End Of Login Endpoint ***************************/
-
+var session_set;
 /******************************* Start Of Login Endpoint ****************************************************/
 app.post('/login', staticUserAuth, function(req, res) {
 
+        session_set = req.session;
         var dt = datetime.create();
-        var date_now = dt.format('y-m-d H:M');
+        var date_now = dt.format('H:M')+dt.format('H:M');
+        console.log(date_now)
         var server_token = (require('crypto').createHash('md5').update(date_now).digest('hex')).toString();
         console.log(server_token)
+
         var request_token = req.body.token
+        var buf 
+        var decode_request_token = new Buffer(request_token, 'base64').toString();
+        console.log(decode_request_token)
+        var request_token = (require('crypto').createHash('md5').update(decode_request_token).digest('hex')).toString();
+        console.log(request_token)
+        if(session_set.email){
+                console.log("Still exist")
+               
+                if(session_set.type=='admin'){
+                        res.redirect('/adminHome')
+                }
+                if(session_set.type=="super"){
+                        res.redirect('/super')
+                }
+        }
+        else{
+                if(server_token === request_token){
 
-        if(server_token === request_token){
+                        var admin_email = req.body.email
+                        var admin_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
 
-                var admin_email = req.body.email
-                var admin_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
-                MongoClient.connect(url, function(err, db) {    
-                db.collection('users').find({email: admin_email , password: admin_password}).toArray(function(err, result){
+                        MongoClient.connect(url, function(err, db) {    
+                                db.collection('users').find({email: admin_email , password: admin_password}).toArray(function(err, result){
 
-                        if(err){
-                            res.status(403).send("Error")
-                        }
-                        if(result.length >0){
-                                var user_type = result[0].type
-                                if(user_type=="admin"){
-                                        //console.log(res)
-                                        app.use(cookieParser())
-                                        app.use(session(
-
-
-
-                                                {    secret: 123,
-    name: result[0].email,
-    proxy: true,
-    resave: true,
-    saveUninitialized: true}));
-                                        
-                                }
-                                
-                              //  res.redirect('/adminHome')
-                        }
-
-                        else{
-                            res.send(" invalid username or password")
-                        }
-                })
-                        
-        });  
-
-     }else{
-        res.status(400).send("False")
-     }                   
-    
+                                        if(err){
+                                                res.status(403).send("Error")
+                                        }
+                                        if(result.length >0){
+                                                var user_type = result[0].type
+                                                
+                                                if(user_type=="admin"){
+                                                        session_set.email = admin_email
+                                                        session_set.type =user_type
+                                                        console.log(session_set)
+                                                        res.status(200).send(result)
+                                                }
+                                                //  res.redirect('/adminHome')
+                                        }
+                                        else{
+                                                res.status(403)
+                                        }
+                                })
+                        });
+                }else{
+                        res.status(400).send("False")
+                }
+        }
 })
+
 /*******************************************End Of Login Endpoint ***************************/
+
+/*------------------------------------------- start logout endpoint------------------------*/
+
+app.get('/logout', staticUserAuth ,function(req,res){
+
+        req.session.destroy(function(err){
+
+                if(err){
+                        throw err
+                }else{
+                        console.log("Logged out")
+                        res.redirect('/login')
+                }
+        })
+})
+
+
+/*---------------------------------------------End Logout endpoint ------------------------*/
+
 
 /*--------------------------- Start Of create new product ------------------------------------*/
 app.post('/admin/new', staticUserAuth, function(req, res) {
