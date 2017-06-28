@@ -34,11 +34,15 @@ var staticUserAuth = basicAuth({
 /******************************* Start Of Login Endpoint ****************************************************/
 
 app.post('/register', staticUserAuth, function(req, res) {
+
         var dt = datetime.create();
-        var date_now = dt.format('y-m-d H:M');
+        var date_now = dt.format('H:M')+dt.format('H:M');
         var server_token = (require('crypto').createHash('md5').update(date_now).digest('hex')).toString();
         console.log(server_token)
         var request_token = req.body.token
+        var decode_request_token = new Buffer(request_token, 'base64').toString();
+        console.log(decode_request_token)
+        var request_token = (require('crypto').createHash('md5').update(decode_request_token).digest('hex')).toString();
 
         if(server_token === request_token){
                 var admin_name = req.body.name
@@ -58,14 +62,14 @@ app.post('/register', staticUserAuth, function(req, res) {
                                                 name: admin_name,
                                                 email: admin_email,
                                                 password: admin_password,
-                                                type: "undefined"
+                                                type: "none"
                                         };
                                         db.collection('users').insertOne(admin , function(err, output){
                                                 if(err){
                                                         throw err
                                                 }else{
                                                         console.log("one admin has been added")
-                                                        res.redirect('/login')
+                                                        res.status(200).send()
                                                 }
                                         })
                                 }
@@ -88,7 +92,6 @@ app.post('/login', staticUserAuth, function(req, res) {
         console.log(server_token)
 
         var request_token = req.body.token
-        var buf 
         var decode_request_token = new Buffer(request_token, 'base64').toString();
         console.log(decode_request_token)
         var request_token = (require('crypto').createHash('md5').update(decode_request_token).digest('hex')).toString();
@@ -97,7 +100,7 @@ app.post('/login', staticUserAuth, function(req, res) {
                 console.log("Still exist")
                
                 if(session_set.type=='admin'){
-                        res.redirect('/adminHome')
+                        res.status(200).send(result)
                 }
                 if(session_set.type=="super"){
                         res.redirect('/super')
@@ -149,7 +152,7 @@ app.get('/logout', staticUserAuth ,function(req,res){
                         throw err
                 }else{
                         console.log("Logged out")
-                        res.redirect('/login')
+                        res.status(200).send('logged out')
                 }
         })
 })
