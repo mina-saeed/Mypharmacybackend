@@ -212,12 +212,12 @@ MongoClient.connect(url, function(err, db) {
 /*--------------------------- Start Of Confirm pharmacy ------------------------------------*/
 app.post('/admin/confirmPharmacy', staticUserAuth, function(req, res) {
 
-    var pharmacy_name = req.body.name
+    var pharmacy_name = req.body.email
     var pharmacy_active = req.body.active
 
     MongoClient.connect(url, function(err, db) {
         db.collection('pharmacy').update(
-                {name: pharmacy_name},
+                {email: pharmacy_name},
                 {$set:
                         {active: pharmacy_active}
                 },

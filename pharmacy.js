@@ -1,99 +1,115 @@
 const config = require('./config.json')
-var express = require('express');
+var cors = require('cors')
+const express = require('express');
 
-var bodyParser = require("body-parser");
-var MongoClient = require('mongodb').MongoClient;
-var url = "mongodb://localhost:27017/mypharmacy";
+const datetime = require('node-datetime');
+const bodyParser = require("body-parser");
+const MongoClient = require('mongodb').MongoClient;
+const url = "mongodb://localhost:27017/mypharmacy";
 const basicAuth = require('./basicAuth.js')
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
+
+
 
 var app = express()
 
 app.use(bodyParser.urlencoded({
-    extended: true
-}))
-app.use(bodyParser.json());
+        extended: true
+}));
 
-app.use(function(req, res, next) {
-     res.header('Access-Control-Allow-Origin', '*')
-       next();
-});
+app.use(bodyParser.json());
+app.use(session({secret: 'pharma'}));
+
+app.use(cors())
+
 var staticUserAuth = basicAuth({
-    users: {
-        'admin': '123456'
-    },
-    challenge: true
+        users: {
+                'admin': '123456'
+        },
+        challenge: true
 })
 
 /******************************* Start Of Login Endpoint ****************************************************/
-app.post('/register/pharmacy', staticUserAuth, function(req, res) {
-   /*console.log(req.body)*/
-    var pharma_name = req.body.name
-    var pharma_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
-    var pharma_address = req.body.address
-    var pharma_locations = req.body.locations
-    var pharma_time = req.body.time
-    var pharma_rating = req.body.rating
-    var pharma_category = req.body.category
-    var pharma_tel = req.body.telephone
-    var pharma_mobile = req.body.mobile
-    var pharma_active = 0
-MongoClient.connect(url, function(err, db) {    
-    db.collection('pharmacy').find({name: pharma_name , mobile: pharma_mobile}).toArray(function(err, result){
+app.post('/register', staticUserAuth, function(req, res) {
 
-        if(err){
-            res.send("Error")
+
+        var dt = datetime.create();
+        var date_now = dt.format('H:M')+dt.format('H:M');
+        var server_token = (require('crypto').createHash('md5').update(date_now).digest('hex')).toString();
+        console.log(server_token)
+        var request_token = req.body.token
+        var decode_request_token = new Buffer(request_token, 'base64').toString();
+        console.log(decode_request_token)
+        var request_token = (require('crypto').createHash('md5').update(decode_request_token).digest('hex')).toString();
+
+        if(server_token === request_token){
+
+                var pharma_name = req.body.name
+                var pharma_email = req.body.email
+                var pharma_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
+                var pharma_locations = req.body.location
+                var pharma_time = req.body.time
+                var pharma_rating = req.body.rating
+                var pharma_category = req.body.category
+                var pharma_tel = req.body.telephone
+                var pharma_mobile = req.body.mobile
+                var pharma_active = 0
+
+                MongoClient.connect(url, function(err, db) {
+
+                        db.collection('pharmacy').find({email: pharma_email , mobile: pharma_mobile}).toArray(function(err, result){
+
+                                if(err){
+                                        res.send("Error")
+                                }
+                                if(result.length >0){
+                                        res.send("user already exists")
+                                }
+                                else{
+                                        var pharmacy={
+                                                name: pharma_name,
+                                                email: pharma_email,
+                                                password: pharma_password,
+                                                location: pharma_locations,
+                                                time: pharma_time,
+                                                rating:     pharma_rating,
+                                                category:   pharma_category,
+                                                telephone:  pharma_tel,
+                                                mobile:     pharma_mobile,
+                                                active:     pharma_active
+                                        };
+                                        db.collection('pharmacy').insertOne(pharmacy , function(err, output){
+                                                if(err){
+                                                        throw err
+                                                }else{
+                                                        console.log("one Pharmacy has been added")
+                                                        res.status(200).send('Registered Successfully')
+                                                }
+                                        })
+                                }
+                        })
+                });
+        }else{
+                res.status(400).send("False")
         }
-        if(result.length >0){
-            console.log(result)
-            res.send("user already exists")
-        }
-        else{
-            var pharmacy={
-                name:       pharma_name,
-                password:   pharma_password,
-                address:    pharma_address,
-                locations:  pharma_locations,
-                time:       pharma_time,
-                rating:     pharma_rating,
-                category:   pharma_category,
-                telephone:  pharma_tel,
-                mobile:     pharma_mobile,
-                active:     pharma_active
-
-            };
-            db.collection('pharmacy').insertOne(pharmacy , function(err, output){
-                
-                if(err){
-
-                    console.log("error Is : ")
-                    console.log(err)
-                }else{
-
-                    console.log("one Pharmacy has been added")
-                    res.redirect('/pharmacyHome')
-                }
-            })
-        }
-    })
-                        
-   });   
 })
 /*******************************************End Of Login Endpoint ***************************/
 
 /******************************* Start Of Login Endpoint ****************************************************/
-app.post('/login/pharmacy', staticUserAuth, function(req, res) {
+app.post('/login', staticUserAuth, function(req, res) {
 
-    var pharma_name = req.body.name
+    var pharma_name = req.body.email
     var pharma_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
 MongoClient.connect(url, function(err, db) {    
-    db.collection('pharmacy').find({name: pharma_name , password: pharma_password , active: 1}).toArray(function(err, result){
+    db.collection('pharmacy').find({email: pharma_name , password: pharma_password , active: 1}).toArray(function(err, result){
 
         if(err){
             res.send("Error !!")
         }
         if(result.length >0){
             console.log("Successfully Login")
-            res.redirect('/pharmacyHome')
+            res.status(200).send(result)
         }
         else{
             res.send(" invalid username or password")
@@ -106,58 +122,79 @@ MongoClient.connect(url, function(err, db) {
 })
 /*******************************************End Of Login Endpoint ***************************/
 
-/*--------------------------- Start Of create new product ------------------------------------*/
-app.post('/pharmacy/new', staticUserAuth, function(req, res) {
-   // console.log(req)
-    var beauty_name = req.body.name
-    var beauty_category = req.body.category
-    var beauty_subCategory = req.body.sub
-    var beauty_barcode = req.body.barcode
-    var beauty_description = req.body.description
-    var beauty_price = req.body.price
-    var beauty_pharmaID = req.body.pharmacyID
+var session_set;
+/******************************* Start Of Login Endpoint ****************************************************/
+app.post('/login', staticUserAuth, function(req, res) {
 
-MongoClient.connect(url, function(err, db) {    
-    db.collection('beauty').find({barcode: beauty_barcode}).toArray(function(err, result){
+        session_set = req.session;
+        var dt = datetime.create();
+        var date_now = dt.format('H:M')+dt.format('H:M');
+        console.log(date_now)
+        var server_token = (require('crypto').createHash('md5').update(date_now).digest('hex')).toString();
+        console.log(server_token)
 
-        if(err){
-            res.send("Error")
-        }
-        if(result.length >0){
-            console.log(result)
-            res.send("Beauty Product already exists")
+        var request_token = req.body.token
+        var decode_request_token = new Buffer(request_token, 'base64').toString();
+        console.log(decode_request_token)
+        var request_token = (require('crypto').createHash('md5').update(decode_request_token).digest('hex')).toString();
+        console.log(request_token)
+        
+        if(session_set.email){
+                console.log("Still exist")
+                res.status(409).send("User already Exists")
         }
         else{
-            var beauty={
-                name: beauty_name,
-                category: beauty_category,
-                subCategory: beauty_subCategory,
-                barcode : beauty_barcode,
-                description: beauty_description,
-                price : beauty_price,
-                pharmacyID: beauty_pharmaID
+                if(server_token === request_token){
 
-            };
-            db.collection('beauty').insertOne(beauty , function(err, output){
-                
-                if(err){
+                        var pharma_name = req.body.email
+                        var pharma_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
 
-                    console.log("error Is : ")
+                        MongoClient.connect(url, function(err, db) {
+
+                                db.collection('pharmacy').find({email: pharma_name , password: pharma_password , active: 1}).toArray(function(err, result){
+
+                                        if(err){
+                                                res.send("Error !!")
+                                        }
+                                        if(result.length >0){
+                                                console.log("Successfully Login")
+                                                res.status(200).send(result)
+                                        }
+                                        else{
+                                                res.status(401).send(" invalid username or password")
+                                        }
+                                })
+                        });
                 }else{
-
-                   
-                    res.send('one beauty product has been added')
+                        res.status(400).send("False")
                 }
-            })
         }
-    })
-                        
-   });   
 })
-/*--------------------------- end of create new product ------------------------------------*/
+
+/********************************************End login endpoint *******************************************/
 
 
+/********************************************Start logout endpoint *************************/
+
+app.get('/logout', staticUserAuth ,function(req,res){
+
+        req.session.destroy(function(err){
+
+                if(err){
+                        throw err
+                }else{
+                        console.log("Logged out")
+                        res.status(200).send('logged out')
+                }
+        })
+})
+
+/********************************************End logout endpoint **************************/
 
 app.listen(3002, function() {
     console.log("Listening To pharmcy API!")
 })
+
+
+
+
