@@ -77,23 +77,25 @@ passport.use(new Strategy({
 
 app.get('/login/facebook', passport.authenticate('facebook' , {scope:'email'}));
 app.get('/login', passport.authenticate('facebook' , {scope:'email'}));
-app.get('/auth/facebook/callback', passport.authenticate('facebook', { successRedirect : '/userHome',failureRedirect: '/login' }),function(req, res) { });
+app.get('/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/login' }),function(req, res) { res.status(200).send("success") });
 
-app.get('/userHome/:deviceID', function(req,res){
+app.post('/userHome', function(req,res){
 
-    var user_device_id = req.params.deviceID
-    console.log(user_device_id)
+    var user_device_id = req.body.deviceID
+
         MongoClient.connect(url, function(err, db) {
-
-            db.collection('users').find({deviceID: user_device_id , mobile:{$ne:null}, location:{$ne:null} }).toArray(function(err, result){
-                    
+                
+            db.collection('users').find({$and: [{deviceID: user_device_id , mobile:{$ne:null}, location:{$ne:null} }]}).toArray(function(err, result){
+                        console.log(result)
                     if(err){
+
                             res.send("Error")
                     }
                     if(result.length >0){
-                            
-                        //res.redirect('/order')
+                       // res.redirect('/order')
                         res.status(200).send(result)
+                    }else{
+                    	res.status(404).send("no data")
                     }
             })
     });
@@ -146,16 +148,17 @@ app.post('/user/submit',staticUserAuth, function(req,res){
 
 })
 app.post('/user/editLocation',staticUserAuth, function(req,res){
-
     var user_device_id=req.body.deviceID
     var user_location = req.body.location
+    var user_mobile = req.body.mobile
 
     MongoClient.connect(url, function(err, db) {
         db.collection('users').update(
                 {deviceID: user_device_id},
                 {$set:
                         {
-                            location:  user_location 
+                            location: user_location ,
+                            mobile: user_mobile
                         },       
                 },
                 function(err, result){
@@ -163,7 +166,7 @@ app.post('/user/editLocation',staticUserAuth, function(req,res){
                         if(err) {throw err}
                         else{
 
-                            res.status(200)
+                            res.status(200).send("User data updated")
                         }        
                 }
         )
