@@ -95,7 +95,9 @@ app.post('/userHome', function(req,res){
                        // res.redirect('/order')
                         res.status(200).send(result)
                     }else{
-                    	res.status(404).send("no data")
+
+                        res.status(404).send("no data")
+
                     }
             })
     });
