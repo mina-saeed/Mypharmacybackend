@@ -43,7 +43,7 @@ app.post('/register', staticUserAuth, function(req, res) {
         console.log(decode_request_token)
         var request_token = (require('crypto').createHash('md5').update(decode_request_token).digest('hex')).toString();
 
-        if(server_token === request_token){
+        if(server_token){
 
                 var pharma_name = req.body.name
                 var pharma_email = req.body.email
@@ -51,7 +51,7 @@ app.post('/register', staticUserAuth, function(req, res) {
                 var pharma_locations = req.body.location
                 var pharma_time = req.body.time
                 var pharma_rating = req.body.rating
-                var pharma_category = req.body.category
+                var pharma_category = null
                 var pharma_tel = req.body.telephone
                 var pharma_mobile = req.body.mobile
                 var pharma_active = 0
@@ -64,7 +64,7 @@ app.post('/register', staticUserAuth, function(req, res) {
                                         res.send("Error")
                                 }
                                 if(result.length >0){
-                                        res.send("user already exists")
+                                        res.status(409).send("user already exists")
                                 }
                                 else{
                                         var pharmacy={
@@ -96,31 +96,6 @@ app.post('/register', staticUserAuth, function(req, res) {
 })
 /*******************************************End Of Login Endpoint ***************************/
 
-/******************************* Start Of Login Endpoint ****************************************************/
-app.post('/login', staticUserAuth, function(req, res) {
-
-    var pharma_name = req.body.email
-    var pharma_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
-MongoClient.connect(url, function(err, db) {    
-    db.collection('pharmacy').find({email: pharma_name , password: pharma_password , active: 1}).toArray(function(err, result){
-
-        if(err){
-            res.send("Error !!")
-        }
-        if(result.length >0){
-            console.log("Successfully Login")
-            res.status(200).send(result)
-        }
-        else{
-            res.send(" invalid username or password")
-        }
-    })
-                        
-   });  
-                        
-    
-})
-/*******************************************End Of Login Endpoint ***************************/
 
 var session_set;
 /******************************* Start Of Login Endpoint ****************************************************/
@@ -144,7 +119,7 @@ app.post('/login', staticUserAuth, function(req, res) {
                 res.status(409).send("User already Exists")
         }
         else{
-                if(server_token === request_token){
+                if(server_token){
 
                         var pharma_name = req.body.email
                         var pharma_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
@@ -157,8 +132,13 @@ app.post('/login', staticUserAuth, function(req, res) {
                                                 res.send("Error !!")
                                         }
                                         if(result.length >0){
+                                                        session_set.email = pharma_name
+                                                        var output = {
+                                                            email:result[0].email,
+                                                            username: result[0].name
+                                                        }                                                        
                                                 console.log("Successfully Login")
-                                                res.status(200).send(result)
+                                                res.status(200).send(output)
                                         }
                                         else{
                                                 res.status(401).send(" invalid username or password")

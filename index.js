@@ -1,6 +1,7 @@
 const config = require('./config.json')
 var express = require('express');
 var passport = require('passport');
+var cors = require('cors')
 const fs = require('fs');
 const http = require('http')
 var Strategy = require('passport-facebook').Strategy;
@@ -15,7 +16,7 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 app.use(bodyParser.json());
-
+app.use(cors())
 app.use(passport.initialize());
 
 var staticUserAuth = basicAuth({
