@@ -2,6 +2,7 @@
 const cors = require('cors')
 const express = require('express');
 const bodyParser = require("body-parser");
+const mongo = require('mongodb')
 const MongoClient = require('mongodb').MongoClient;
 const url = "mongodb://localhost:27017/mypharmacy";
 const basicAuth = require('./basicAuth.js')
@@ -23,6 +24,36 @@ var staticUserAuth = basicAuth({
         },
         challenge: true
 })
+
+
+
+
+
+/******************************* Get all Products Endpoint ****************************************************/
+app.get('/all', staticUserAuth, function(req, res) {
+
+        
+                MongoClient.connect(url, function(err, db) {
+
+                        db.collection('beauty').find({}).toArray(function(err, result){
+                                if(err){
+                                        res.send("Error")
+                                }
+                                if(result.length >0){
+
+                                        res.status(200).send(result)
+                                }
+                                else{
+                                        res.send("Sorry , No Products found")
+                                }
+                        })
+                });
+        
+
+   
+})
+/*******************************************End Of All Products Endpoint ***************************/
+
 
 /*--------------------------- Start Of create new product ------------------------------------*/
 app.post('/new', staticUserAuth, function(req, res) {
@@ -75,33 +106,47 @@ MongoClient.connect(url, function(err, db) {
 })
 /*--------------------------- end of create new product ------------------------------------*/
 
+/*----------------------- Start of Update category--------------------------*/
+/*app.put('/updateProduct', staticUserAuth,function(req, res){
+
+    var productID = req.params.id
+    
+    MongoClient.connect(url, function(err, db) {
+        db.collection('beauty').remove({_id: new mongo.ObjectID (productID) } , function(err, obj){
+
+            if(err)
+                throw err
+            if(obj){
+                res.status(200).send()
+            }
+        })
 
 
+    })
+});
+*/
+/*---------------------------------- End Of Update category----------------*/
 
-/******************************* Get all Products Endpoint ****************************************************/
-app.get('/all', staticUserAuth, function(req, res) {
+/*----------------------- Start of Delete category--------------------------*/
+app.delete('/deleteProduct/:id', staticUserAuth,function(req, res){
 
-        
-                MongoClient.connect(url, function(err, db) {
+    var productID = req.params.id
+    
+    MongoClient.connect(url, function(err, db) {
+        db.collection('beauty').remove({_id: new mongo.ObjectID (productID) } , function(err, obj){
 
-                        db.collection('beauty').find({}).toArray(function(err, result){
-                                if(err){
-                                        res.send("Error")
-                                }
-                                if(result.length >0){
+            if(err)
+                throw err
+            if(obj){
+                res.status(200).send()
+            }
+        })
 
-                                        res.status(200).send(result)
-                                }
-                                else{
-                                        res.send("Sorry , No Products found")
-                                }
-                        })
-                });
-        
 
-   
-})
-/*******************************************End Of All Products Endpoint ***************************/
+    })
+});
+
+/*---------------------------------- End Of delete category----------------*/
 
 app.listen(3005, function() {
     console.log("Listening To Beauty Products API !")

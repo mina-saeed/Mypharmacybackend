@@ -1,6 +1,7 @@
 const config = require('./config.json')
 var express = require('express');
 var passport = require('passport');
+var request = require('request');
 var cors = require('cors')
 const fs = require('fs');
 const http = require('http')
@@ -9,8 +10,16 @@ var bodyParser = require("body-parser");
 var MongoClient = require('mongodb').MongoClient;
 var url = "mongodb://localhost:27017/mypharmacy";
 const basicAuth = require('./basicAuth.js')
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
+
+var multer = require('multer');
+
 
 var app = express()
+
+app.use(bodyParser.json());
+app.use(session({secret: 'test'})); 
 
 app.use(bodyParser.urlencoded({
     extended: true
@@ -79,6 +88,140 @@ passport.use(new Strategy({
 app.get('/login/facebook', passport.authenticate('facebook' , {scope:'email'}));
 app.get('/login', passport.authenticate('facebook' , {scope:'email'}));
 app.get('/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/login' }),function(req, res) { res.status(200).send("success") });
+
+
+
+/******************************* Start Of Register Endpoint ****************************************************/
+
+app.post('/register', staticUserAuth, function(req, res) {
+
+        var dt = datetime.create();
+        var date_now = dt.format('H:M')+dt.format('H:M');
+        var server_token = (require('crypto').createHash('md5').update(date_now).digest('hex')).toString();
+        console.log(server_token)
+
+        var request_token = req.body.token
+        var decode_request_token = new Buffer(request_token, 'base64').toString();
+        console.log(decode_request_token)
+        var request_token = (require('crypto').createHash('md5').update(decode_request_token).digest('hex')).toString();
+
+        if(server_token){
+                var username = req.body.name
+                var useremail = req.body.email
+                var userpassword = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
+
+                MongoClient.connect(url, function(err, db) {
+                        db.collection('users').find({email: useremail}).toArray(function(err, result){
+                                if(err){
+                                        res.send("Error")
+                                }
+                                if(result.length >0){
+                                        res.status(409).send("user already exists")
+                                }
+                                else{
+                                        var userData={
+                                                name: username,
+                                                email: useremail,
+                                                password: userpassword,
+                                                type: "user",
+                                                active:1
+                                        };
+                                        db.collection('users').insertOne(userData , function(err, output){
+                                                if(err){
+                                                        throw err
+                                                }else{
+                                                        console.log("one user has been added")
+                                                        res.status(200).send()
+                                                }
+                                        })
+                                }
+                        })
+                }); 
+        }else{
+                res.status(400).send("False")
+        }
+})
+/*******************************************End Of Register Endpoint ***************************/
+var session_set;
+/******************************* Start Of Login Endpoint ****************************************************/
+app.post('/login', staticUserAuth, function(req, res) {
+
+        session_set = req.session;
+        var dt = datetime.create();
+        var date_now = dt.format('H:M')+dt.format('H:M');
+        console.log(date_now)
+        var server_token = (require('crypto').createHash('md5').update(date_now).digest('hex')).toString();
+        console.log(server_token)
+
+       // var request_token = req.body.token
+     //   var decode_request_token = new Buffer(request_token, 'base64').toString();
+       // console.log(decode_request_token)
+       // var request_token = (require('crypto').createHash('md5').update(decode_request_token).digest('hex')).toString();
+       // console.log(request_token)
+        if(session_set.email){
+                console.log("Still exist")
+               
+                if(session_set.type=='user'){
+                        res.status(200).send("Still exist")
+                }
+
+        }
+        else{
+                if(server_token){
+
+                        var user_email = req.body.email
+                        var user_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
+
+                        MongoClient.connect(url, function(err, db) {    
+                                db.collection('users').find({email: user_email , password: user_password , type:"user" , active:1}).toArray(function(err, result){
+
+                                        if(err){
+                                                res.status(403).send("Error")
+                                        }
+                                        if(result.length >0){
+                                                        session_set.email = admin_email
+                                                        session_set.type =user_type
+                                           				
+                                           				var output = {
+                                                            email:result[0].email,
+                                                            type: result[0].type,
+                                                            username: result[0].name
+                                                        }
+
+                                                        console.log(session_set)
+                                                        res.status(200).send(output)
+                                        }
+                                        else{
+                                                res.status(401).send("incoorect username or password")
+                                        }
+                                })
+                        });
+                }else{
+                        res.status(400).send("False")
+                }
+        }
+})
+
+/*******************************************End Of Login Endpoint ***************************/
+
+/*------------------------------------------- start logout endpoint------------------------*/
+
+app.get('/logout', staticUserAuth ,function(req,res){
+
+        req.session.destroy(function(err){
+
+                if(err){
+                        throw err
+                }else{
+                        console.log("Logged out")
+                        res.status(200).send('logged out')
+                }
+        })
+})
+
+
+/*---------------------------------------------End Logout endpoint ------------------------*/
+
 
 app.post('/userHome', function(req,res){
 
@@ -177,107 +320,94 @@ app.post('/user/editLocation',staticUserAuth, function(req,res){
    });   
 
 })
-/*app.post('/order/uploadImage',staticUserAuth, function(req,res){
 
-        var user_device_id=req.body.deviceID
-        var user_image = (req.body.image).toLowerCase()
-
-        var image_dir = __dirname + 'orderImages/'
-        var image_url = __dirname + 'orderImages/'+user_image
-
-        fs.rename(image_url, user_image, function(err) {
-            if (err) {
-                console.log(err);
-                res.send(403);
-            } else {
-                MongoClient.connect(url, function(err, db) {
-                        if (err) throw err;
-                                var order = { 
-                                        userID: user_device_id,
-                                        image_url: image_url
-
-                                 };
-
-
-                                                db.collection("orders").insertOne(order, function(err, res) {
-                                                        if (err){
-                                                        }else{
-                                                                console.log("1 order inserted");
-                                                                
-                                                        }
-                                
-                                                        db.close();
-                                                });
-                                        
-
-
-
-                });
-            }
-        });
-
-
-
-})*/
 app.post('/order/submit',staticUserAuth, function(req,res){
-var fullUrl = "http://207.154.240.16/orderImages/";
-    var order_user=req.body.userID
-    var order_pharmacy=req.body.pharmacy
-    var order_products=req.body.products
-    var order_price = req.body.price
-    var order_location = req.body.location
-    var order_time = req.body.time
-    var order_status = req.body.status
-    var order_image = "test.jpg"
-    var image_url = fullUrl+order_image
+
+	var order_userID = req.body.userInfo.userID
+	var order_userLocation = req.body.userInfo.location
+	var user_order = req.body.order
 
         MongoClient.connect(url, function(err, db) {
-        if (err) throw err;
-                var order = { 
-                        userID: order_user,
-                        pharmacy: order_pharmacy,
-                        products: order_products,
-                        price: order_price,
-                        location: order_location,
-                        time: order_time,
-                        status: order_status,
-                        imageUrl: image_url
 
+        	if (err) throw err;
+        	var order = {
+        		      userID: order_userID,
+                        location: order_userLocation,
+                        order: user_order,
+                };
+                db.collection("orders").insertOne(order, function(err, res) {
 
-                 };
-
-
-                                db.collection("orders").insertOne(order, function(err, res) {
-                                        if (err){
-                                        }else{
-                                                if(order_image!==null || order_image!==""){
-
-                                                    var req = http.request(function(res) {
-                                                      var file = fs.createWriteStream(order_image);
-                                                      res.pipe(file);
-                                                    });
-                                                    req.on('error', function(e) {
-                                                      console.log('error: ' + e.message);
-                                                    });
-                                                    req.end();
-                                                }
-                                                
-                                        }
-                
-                                        db.close();
-                                });
-                        
-
-
-
-});
- 
-
+                	if (err){
+                		throw err
+                	}else{
+                		request('http://www.google.com', function (error, response, body) {
+                			if (!error && response.statusCode == 200) {
+                				console.log(body) // Print the google web page
+                			}
+                		})
+                	}
+                	db.close();
+                })
+        });
 })
 
 app.get('/order',staticUserAuth,function(req,res){
     //res.redirect("/order")
 })
+
+
+app.post('/uploadPrescription',staticUserAuth, function(req,res){
+
+        const uploadUrl = '/var/www/html/uploads/prescription'
+        var image_url="http://146.185.148.66/uploads/prescription/";
+        var Storage = multer.diskStorage({
+                destination: function (req, file, callback) {
+                        callback(null, uploadUrl);
+                },
+                filename: function (req, file, callback) {
+                        image_url += Date.now() + "_" + file.originalname;
+                        callback(null,Date.now() + "_" + file.originalname);
+                }
+        });
+        var upload = multer({ storage: Storage }).array("imgUploader", 3); //Field name and max count
+
+        upload(req, res, function (err) {
+                if (err) {
+                        console.log(err)
+                        return res.end("Something went wrong!");
+                }else{
+                var order_userID = req.body.userInfo.userID
+                var order_userLocation = req.body.userInfo.location
+
+                MongoClient.connect(url, function(err, db) {
+                        if (err) throw err;
+                        var order = {
+                                userID: order_userID,
+                                location: order_userLocation,
+                                order: image_url,
+                        };
+                        db.collection("orders").insertOne(order, function(err, res) {
+                                if (err){
+                                        throw err
+                                }else{
+
+/*                        request('http://www.google.com', function (error, response, body) {
+                            if (!error && response.statusCode == 200) {
+                                console.log(body) // Print the google web page
+                            }
+                        })*/
+                    }
+                    db.close();
+                })
+        });
+        }
+    });
+
+
+
+})
+
+
 
 app.listen(3000, function() {
     console.log("Listening!")

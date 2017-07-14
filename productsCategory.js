@@ -90,6 +90,77 @@ app.get('/all', staticUserAuth, function(req, res) {
 })
 /*******************************************End Of All categorys ***************************/
 
+
+
+/*--------------------------- Start Of create new sub-category ------------------------------------*/
+app.post('/addSubCategory', staticUserAuth, function(req, res) {
+        // console.log(req)
+        var subCategory_name = req.body.name
+        var subCategory_catID = req.body.catID
+        var subCategory_description = req.body.description
+
+
+        MongoClient.connect(url, function(err, db) {    
+                db.collection('productSubCategory').find({name: subCategory_name}).toArray(function(err, result){
+
+                        if(err){
+                                res.send("Error")
+                        }
+                        if(result.length >0){
+                                console.log(result)
+                                res.status(409).send("Product sub-category already exists")
+                        }
+                        else{
+
+                                var subCategory={
+                                        catID: subCategory_catID,
+                                        name: subCategory_name,
+                                        description: subCategory_description,
+                                };
+                        
+                        db.collection('productSubCategory').insertOne(subCategory , function(err, output){
+
+                                if(err){
+                                        console.log("error Is : "+err)
+                                }else{
+                                        res.send('one Product sub-category has been added')
+                                }
+                        })
+                }
+        })
+        });
+})
+/*--------------------------- end of create new sub-category ------------------------------------*/
+
+/*--------------------------- Start Of Get Product sub-categories ------------------------------------*/
+app.get('/allSubCategories/:catID', staticUserAuth, function(req, res) {
+        // console.log(req)
+        var category_id = parseInt(req.params.catID)
+
+            console.log(category_id)
+        MongoClient.connect(url, function(err, db) {    
+                db.collection('productSubCategory').find({catID: category_id}).toArray(function(err, result){
+
+                        if(err){
+                                res.send("Error")
+                        }
+                        if(result.length >0){
+                                console.log(result)
+                                res.send(result)
+                        }
+                        else{
+                            res.status(404).send(result)
+                }
+        })
+        });
+})
+/*--------------------------- end of get Product sub-category ------------------------------------*/
+
+
+
+
+
+
 app.listen(3007, function() {
     console.log("Listening To product Category API !")
 })

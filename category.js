@@ -63,6 +63,69 @@ app.post('/new', staticUserAuth, function(req, res) {
 /*--------------------------- end of create new category ------------------------------------*/
 
 
+/*--------------------------- Start Of create new sub-category ------------------------------------*/
+app.post('/addSubCategory', staticUserAuth, function(req, res) {
+        // console.log(req)
+        var subCategory_name = req.body.name
+        var subCategory_catID = req.body.catID
+        var subCategory_description = req.body.description
+
+
+        MongoClient.connect(url, function(err, db) {    
+                db.collection('medicineSubCategory').find({name: subCategory_name}).toArray(function(err, result){
+
+                        if(err){
+                                res.send("Error")
+                        }
+                        if(result.length >0){
+                                console.log(result)
+                                res.status(409).send("Medicine sub-category already exists")
+                        }
+                        else{
+
+                                var subCategory={
+                                        catID: subCategory_catID,
+                                        name: subCategory_name,
+                                        description: subCategory_description,
+                                };
+                        
+                        db.collection('medicineSubCategory').insertOne(subCategory , function(err, output){
+
+                                if(err){
+                                        console.log("error Is : "+err)
+                                }else{
+                                        res.send('one medicine sub-category has been added')
+                                }
+                        })
+                }
+        })
+        });
+})
+/*--------------------------- end of create new sub-category ------------------------------------*/
+
+/*--------------------------- Start Of Get medicine sub-categories ------------------------------------*/
+app.get('/allSubCategories/:catID', staticUserAuth, function(req, res) {
+        // console.log(req)
+        var category_id = parseInt(req.params.catID)
+
+            console.log(category_id)
+        MongoClient.connect(url, function(err, db) {    
+                db.collection('medicineSubCategory').find({catID: category_id}).toArray(function(err, result){
+
+                        if(err){
+                                res.send("Error")
+                        }
+                        if(result.length >0){
+                                console.log(result)
+                                res.send(result)
+                        }
+                        else{
+                            res.status(404).send(result)
+                }
+        })
+        });
+})
+/*--------------------------- end of get medicine sub-category ------------------------------------*/
 
 
 /******************************* Get all categorys Endpoint ****************************************************/
