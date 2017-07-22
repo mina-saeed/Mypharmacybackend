@@ -7,7 +7,7 @@ const bodyParser = require("body-parser");
 const MongoClient = require('mongodb').MongoClient;
 const url = "mongodb://localhost:27017/mypharmacy";
 const basicAuth = require('./basicAuth.js')
-var cookieParser = require('cookie-parser');
+var cookie = require('cookie-parser');
 var session = require('express-session');
 
 
@@ -38,19 +38,22 @@ app.post('/register', staticUserAuth, function(req, res) {
         var date_now = dt.format('H:M')+dt.format('H:M');
         var server_token = (require('crypto').createHash('md5').update(date_now).digest('hex')).toString();
         console.log(server_token)
-        var request_token = req.body.token
+/*        var request_token = req.body.token
         var decode_request_token = new Buffer(request_token, 'base64').toString();
         console.log(decode_request_token)
-        var request_token = (require('crypto').createHash('md5').update(decode_request_token).digest('hex')).toString();
+        var request_token = (require('crypto').createHash('md5').update(decode_request_token).digest('hex')).toString();*/
 
         if(server_token){
 
                 var pharma_name = req.body.name
                 var pharma_email = req.body.email
                 var pharma_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
-                var pharma_locations = req.body.location
+                var pharma_city = req.body.city
+                var pharma_location = req.body.location
+                var pharma_street = req.body.street
+                var pharma_deliverTo = req.body.deliverTo
                 var pharma_time = req.body.time
-                var pharma_rating = req.body.rating
+                var pharma_rating = null
                 var pharma_category = null
                 var pharma_tel = req.body.telephone
                 var pharma_mobile = req.body.mobile
@@ -71,7 +74,10 @@ app.post('/register', staticUserAuth, function(req, res) {
                                                 name: pharma_name,
                                                 email: pharma_email,
                                                 password: pharma_password,
-                                                location: pharma_locations,
+                                                city: pharma_city,
+                                                location: pharma_location,
+                                                street: pharma_street,
+                                                deliverTo: pharma_deliverTo,
                                                 time: pharma_time,
                                                 rating:     pharma_rating,
                                                 category:   pharma_category,
@@ -123,21 +129,32 @@ app.post('/login', staticUserAuth, function(req, res) {
 
                         var pharma_name = req.body.email
                         var pharma_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
-
+                        console.log(pharma_password)
                         MongoClient.connect(url, function(err, db) {
 
-                                db.collection('pharmacy').find({email: pharma_name , password: pharma_password , active: 1}).toArray(function(err, result){
-
+                                db.collection('pharmacy').find({email: pharma_name , password: pharma_password , active: "1"}).toArray(function(err, result){
+                                        console.log(result)
                                         if(err){
                                                 res.send("Error !!")
                                         }
                                         if(result.length >0){
+                                                let options = {
+                                                    httpOnly: false, // The cookie only accessible by the web server
+                                                    }
+
+                                                    // Set cookie
+                                                res.cookie('pharmacy', result[0].email, options) // options is optional
+
+
                                                         session_set.email = pharma_name
                                                         var output = {
+                                                            id: result[0]._id,
                                                             email:result[0].email,
                                                             username: result[0].name
                                                         }                                                        
                                                 console.log("Successfully Login")
+
+                                              //  console.log(res)
                                                 res.status(200).send(output)
                                         }
                                         else{
@@ -164,7 +181,7 @@ app.get('/logout', staticUserAuth ,function(req,res){
                         throw err
                 }else{
                         console.log("Logged out")
-                        res.status(200).send('logged out')
+                        res.redirect("/")
                 }
         })
 })

@@ -153,6 +153,118 @@ app.get('/all', staticUserAuth, function(req, res) {
 })
 /*******************************************End Of All categorys ***************************/
 
+
+
+/*----------------------- Start of Update Medicine Category --------------------------*/
+app.put('/updateCategory', staticUserAuth,function(req, res){
+
+    var cat_ID = req.body.id
+    var category_name = req.body.name
+    var category_description = req.body.description
+
+
+    MongoClient.connect(url, function(err, db) {
+        db.collection('category').update(
+                {_id: new mongo.ObjectID (cat_ID)},
+                {$set:
+                        {
+                            name: category_name,
+                            description: category_description,
+                        },       
+                },
+                function(err, result){
+
+                        if(err) {throw err}
+                        else{
+
+                            res.status(200).send("Medicine Category updated")
+                        }        
+                }
+        )
+                        
+   }); 
+
+});
+
+/*---------------------------------- End Of Update Medicine Category ----------------*/
+
+/*----------------------- Start of Delete Medicine Category --------------------------*/
+app.delete('/deleteCategory/:id', staticUserAuth,function(req, res){
+
+    var cat_ID = req.body.id
+    
+    MongoClient.connect(url, function(err, db) {
+        db.collection('category').remove({_id: new mongo.ObjectID (cat_ID) } , function(err, obj){
+
+            if(err)
+                throw err
+            if(obj){
+                res.status(200).send()
+            }
+        })
+
+
+    })
+});
+
+/*---------------------------------- End Of delete Medicine Category ----------------*/
+
+
+
+
+/*----------------------- Start of Update Medicine Sub-Category --------------------------*/
+app.put('/updateSubCategory', staticUserAuth,function(req, res){
+
+    var sub_ID = req.body.id
+    var subCategory_name = req.body.name
+    var subCategory_description = req.body.description
+
+
+    MongoClient.connect(url, function(err, db) {
+        db.collection('medicineSubCategory').update(
+                {_id: new mongo.ObjectID (sub_ID)},
+                {$set:
+                        {
+                            name: subCategory_name,
+                            description: subCategory_description,
+                        },       
+                },
+                function(err, result){
+
+                        if(err) {throw err}
+                        else{
+
+                            res.status(200).send("Medicine Sub-Category updated")
+                        }        
+                }
+        )
+                        
+   }); 
+
+});
+
+/*---------------------------------- End Of Update Medicine Sub-Category  ----------------*/
+
+/*----------------------- Start of Delete Medicine Sub-Category  --------------------------*/
+app.delete('/deleteSubCategory/:id', staticUserAuth,function(req, res){
+
+    var sub_ID = req.body.id
+    
+    MongoClient.connect(url, function(err, db) {
+        db.collection('medicineSubCategory').remove({_id: new mongo.ObjectID (sub_ID) } , function(err, obj){
+
+            if(err)
+                throw err
+            if(obj){
+                res.status(200).send()
+            }
+        })
+
+
+    })
+});
+
+/*---------------------------------- End Of delete Medicine Sub-Category  ----------------*/
 app.listen(3006, function() {
     console.log("Listening To categories API !")
 })

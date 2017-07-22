@@ -85,7 +85,6 @@ MongoClient.connect(url, function(err, db) {
                 description: beauty_description,
                 price : beauty_price,
                 pharmacyID: beauty_pharmaID,
-                creator: beauty_creator
 
             };
             db.collection('beauty').insertOne(beauty , function(err, output){
@@ -106,47 +105,74 @@ MongoClient.connect(url, function(err, db) {
 })
 /*--------------------------- end of create new product ------------------------------------*/
 
-/*----------------------- Start of Update category--------------------------*/
-/*app.put('/updateProduct', staticUserAuth,function(req, res){
+/*----------------------- Start of Update product--------------------------*/
+app.put('/updateProduct', staticUserAuth,function(req, res){
 
-    var productID = req.params.id
+    var productID = req.body.id
+    var beauty_name = req.body.name
+    var beauty_category = req.body.category
+    var beauty_subCategory = req.body.sub
+    var beauty_barcode = req.body.barcode
+    var beauty_description = req.body.description
+    var beauty_price = req.body.price
+    var beauty_pharmaID = req.body.pharmacyID
+    var beauty_creator = req.body.creator
+    
+
+    MongoClient.connect(url, function(err, db) {
+        db.collection('beauty').update(
+                {_id: new mongo.ObjectID (productID)},
+                {$set:
+                        {
+                            name: beauty_name,
+                            category: beauty_category,
+                            subCategory: beauty_subCategory,
+                            barcode : beauty_barcode,
+                            description: beauty_description,
+                            price : beauty_price,
+                            pharmacyID: beauty_pharmaID,
+                            creator: beauty_creator
+                        },       
+                },
+                function(err, result){
+
+                        if(err) {throw err}
+                        else{
+
+                            res.status(200).send("Product updated")
+                        }        
+                }
+        )
+                        
+   }); 
+
+});
+
+/*---------------------------------- End Of Update product----------------*/
+
+/*----------------------- Start of Delete product--------------------------*/
+app.delete('/deleteProduct', staticUserAuth,function(req, res){
+
+    var productID = req.query.id
     
     MongoClient.connect(url, function(err, db) {
-        db.collection('beauty').remove({_id: new mongo.ObjectID (productID) } , function(err, obj){
+        db.collection('beauty').deleteOne({_id: new mongo.ObjectID (productID) } , function(err, obj){
 
             if(err)
                 throw err
-            if(obj){
+            if(obj.result.n ==1){
+            
                 res.status(200).send()
+            }else{
+            	res.status(204).send()
             }
         })
 
 
     })
 });
-*/
-/*---------------------------------- End Of Update category----------------*/
 
-/*----------------------- Start of Delete category--------------------------*/
-app.delete('/deleteProduct/:id', staticUserAuth,function(req, res){
-
-    var productID = req.params.id
-    
-    MongoClient.connect(url, function(err, db) {
-        db.collection('beauty').remove({_id: new mongo.ObjectID (productID) } , function(err, obj){
-
-            if(err)
-                throw err
-            if(obj){
-                res.status(200).send()
-            }
-        })
-
-
-    })
-});
-
-/*---------------------------------- End Of delete category----------------*/
+/*---------------------------------- End Of delete product ----------------*/
 
 app.listen(3005, function() {
     console.log("Listening To Beauty Products API !")

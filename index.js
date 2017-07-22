@@ -12,15 +12,15 @@ var url = "mongodb://localhost:27017/mypharmacy";
 const basicAuth = require('./basicAuth.js')
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
-
+const datetime = require('node-datetime');
 var multer = require('multer');
-
+const fileUpload = require('express-fileupload');
 
 var app = express()
 
 app.use(bodyParser.json());
 app.use(session({secret: 'test'})); 
-
+app.use(fileUpload());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
@@ -170,6 +170,8 @@ app.post('/login', staticUserAuth, function(req, res) {
                 if(server_token){
 
                         var user_email = req.body.email
+                        console.log(user_email)
+                        console.log(req.body.password)
                         var user_password = (require('crypto').createHash('md5').update(req.body.password).digest('hex')).toString();
 
                         MongoClient.connect(url, function(err, db) {    
@@ -179,8 +181,8 @@ app.post('/login', staticUserAuth, function(req, res) {
                                                 res.status(403).send("Error")
                                         }
                                         if(result.length >0){
-                                                        session_set.email = admin_email
-                                                        session_set.type =user_type
+                                                        session_set.email = user_email
+                                                        session_set.type =result[0].type
                                            				
                                            				var output = {
                                                             email:result[0].email,
@@ -357,7 +359,7 @@ app.get('/order',staticUserAuth,function(req,res){
 
 
 app.post('/uploadPrescription',staticUserAuth, function(req,res){
-
+	console.log(req.body)
         const uploadUrl = '/var/www/html/uploads/prescription'
         var image_url="http://146.185.148.66/uploads/prescription/";
         var Storage = multer.diskStorage({
@@ -365,6 +367,7 @@ app.post('/uploadPrescription',staticUserAuth, function(req,res){
                         callback(null, uploadUrl);
                 },
                 filename: function (req, file, callback) {
+                	console.log(file.originalname)
                         image_url += Date.now() + "_" + file.originalname;
                         callback(null,Date.now() + "_" + file.originalname);
                 }
@@ -376,15 +379,16 @@ app.post('/uploadPrescription',staticUserAuth, function(req,res){
                         console.log(err)
                         return res.end("Something went wrong!");
                 }else{
-                var order_userID = req.body.userInfo.userID
-                var order_userLocation = req.body.userInfo.location
-
+                    return res.end("Success!");
+                //var order_userID = req.body.userInfo.userID
+                //var order_userLocation = req.body.userInfo.location
+                console.log(image_url)
                 MongoClient.connect(url, function(err, db) {
                         if (err) throw err;
                         var order = {
-                                userID: order_userID,
-                                location: order_userLocation,
-                                order: image_url,
+                             //   userID: order_userID,
+                           //     location: order_userLocation,
+                            //    order: image_url,
                         };
                         db.collection("orders").insertOne(order, function(err, res) {
                                 if (err){

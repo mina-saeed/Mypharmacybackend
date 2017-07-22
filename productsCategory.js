@@ -161,6 +161,121 @@ app.get('/allSubCategories/:catID', staticUserAuth, function(req, res) {
 
 
 
+
+
+/*----------------------- Start of Update Product Category --------------------------*/
+app.put('/updateCategory', staticUserAuth,function(req, res){
+
+    var cat_ID = req.body.id
+    var category_name = req.body.name
+    var category_description = req.body.description
+
+
+    MongoClient.connect(url, function(err, db) {
+        db.collection('productCategory').update(
+                {_id: new mongo.ObjectID (cat_ID)},
+                {$set:
+                        {
+                            name: category_name,
+                            description: category_description,
+                        },       
+                },
+                function(err, result){
+
+                        if(err) {throw err}
+                        else{
+
+                            res.status(200).send("Product Category updated")
+                        }        
+                }
+        )
+                        
+   }); 
+
+});
+
+/*---------------------------------- End Of Update product Category ----------------*/
+
+/*----------------------- Start of Delete product Category --------------------------*/
+app.delete('/deleteCategory/:id', staticUserAuth,function(req, res){
+
+    var cat_ID = req.body.id
+    
+    MongoClient.connect(url, function(err, db) {
+        db.collection('productCategory').remove({_id: new mongo.ObjectID (cat_ID) } , function(err, obj){
+
+            if(err)
+                throw err
+            if(obj){
+                res.status(200).send()
+            }
+        })
+
+
+    })
+});
+
+/*---------------------------------- End Of delete product Category ----------------*/
+
+
+
+
+/*----------------------- Start of Update product Sub-Category --------------------------*/
+app.put('/updateSubCategory', staticUserAuth,function(req, res){
+
+    var sub_ID = req.body.id
+    var subCategory_name = req.body.name
+    var subCategory_description = req.body.description
+
+
+    MongoClient.connect(url, function(err, db) {
+        db.collection('productSubCategory').update(
+                {_id: new mongo.ObjectID (sub_ID)},
+                {$set:
+                        {
+                            name: subCategory_name,
+                            description: subCategory_description,
+                        },       
+                },
+                function(err, result){
+
+                        if(err) {throw err}
+                        else{
+
+                            res.status(200).send("Product Sub-Category updated")
+                        }        
+                }
+        )
+                        
+   }); 
+
+});
+
+/*---------------------------------- End Of Update product Sub-Category  ----------------*/
+
+/*----------------------- Start of Delete product Sub-Category  --------------------------*/
+app.delete('/deleteSubCategory/:id', staticUserAuth,function(req, res){
+
+    var sub_ID = req.body.id
+    
+    MongoClient.connect(url, function(err, db) {
+        db.collection('productSubCategory').remove({_id: new mongo.ObjectID (sub_ID) } , function(err, obj){
+
+            if(err)
+                throw err
+            if(obj){
+                res.status(200).send()
+            }
+        })
+
+
+    })
+});
+
+/*---------------------------------- End Of delete product Sub-Category  ----------------*/
+
+
+
 app.listen(3007, function() {
     console.log("Listening To product Category API !")
 })
