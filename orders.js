@@ -65,83 +65,28 @@ console.log("User Connected")
                                         if (err){
                                                 throw err
                                         }else{
-                                      //          console.log(socket)
-                                       //   db.collection('pharmacy').find({city:"Giza"}).toArray(function(err, pharmacies){
-                                          //   socket.to('pharma@mail.com').emit('message', { text: 'data' });   
-                                                io.emit('first',{type:'new-message', text:"Mesage"});   
-                                              //  io.emit('message', Object.keys(io.sockets.manager.rooms) );
+                                                var existPharmacies = []
+                                          db.collection('pharmacy').find({city:"Giza"}).toArray(function(err, pharmacies){
+                                             
 
-
-
-                                           
-                                                   /* console.log(users['pharma@mail.com'].emit('add-message', "Hello"));
-                                                         users['pharma@mail.com'].emit('add-message', "Hello");*/
-/*                                                        for (let i = 0 ; i<pharmacies.length;i++){
+                                                        for (let i = 0 ; i<pharmacies.length;i++){
 
                                                                 if(pharmacies[i].deliverTo.includes("Alharam")){
 
+                                                                        existPharmacies.push(pharmacies[i].email)
 
-                                                                        for (let x = 0 ; x< users.length;x++){
-                                                                              //  let key =users[i]
-                                                                         //     console.log(users[i])
-                                                                              
-                                                                              var online_pharmacy= users[i].split(",")
-                                                                             var dbPharma = pharmacies[i].email
-                                                                             var socketPharma = online_pharmacy[0]
-                                                                             var socketIdPharma = online_pharmacy[1]
-                                                                             //   console.log(dbPharma)
-                                                                             var str = socketIdPharma.trim();
-                                                                                
-                                                                             if(dbPharma.trim() == socketPharma.trim()){
-                                                                                console.log(str)
 
-                                                                                        console.log("Done")
-
-                                                                                }else{
-                                                                                        console.log("Error")
-                                                                                }
-                                                                        }
                                                                 }
-                                                        }*/
+                                                        }
+                                                        io.emit('first',{type:'new-message', data:existPharmacies});
                                              //   })
-                                        }
+                                        })
                                         db.close();
-                                })
+                                }
                         })
+
                 })
-
-
-
-
-
-/*  socket.on('join', function (data) {
- 
-  	var user={
-  		[data.email.email]:socket.id 
-  	}
-  	users.push(user)
-     console.log(users)
-   // socket.join(data.email); // We are using room of socket io
-  //  console.log(io.sockets.adapter.rooms)
-  });*/
-
-/*socket.on('disconnect', function(){
-    console.log('user disconnected');
-});*/
-
-
-
-
-
-/*app.get('/order',staticUserAuth,function(req,res){
-    //res.redirect("/order")
-})*/
-
-
-
-
-
-
+                })
 
 http.listen(3008, () => {
   console.log('started on port 5000');

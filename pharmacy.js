@@ -11,7 +11,6 @@ var cookie = require('cookie-parser');
 var session = require('express-session');
 
 
-
 var app = express()
 
 app.use(bodyParser.urlencoded({
@@ -20,7 +19,7 @@ app.use(bodyParser.urlencoded({
 
 app.use(bodyParser.json());
 app.use(session({secret: 'pharma'}));
-
+app.use(cookie())
 app.use(cors())
 
 var staticUserAuth = basicAuth({
@@ -104,6 +103,7 @@ app.post('/register', staticUserAuth, function(req, res) {
 
 
 var session_set;
+
 /******************************* Start Of Login Endpoint ****************************************************/
 app.post('/login', staticUserAuth, function(req, res) {
 
@@ -133,17 +133,16 @@ app.post('/login', staticUserAuth, function(req, res) {
                         MongoClient.connect(url, function(err, db) {
 
                                 db.collection('pharmacy').find({email: pharma_name , password: pharma_password , active: "1"}).toArray(function(err, result){
-                                        console.log(result)
+                                     
                                         if(err){
                                                 res.send("Error !!")
                                         }
                                         if(result.length >0){
                                                 let options = {
+                                                    maxAge: 1000 * 60 * 1000,
                                                     httpOnly: false, // The cookie only accessible by the web server
                                                     }
 
-                                                    // Set cookie
-                                                res.cookie('pharmacy', result[0].email, options) // options is optional
 
 
                                                         session_set.email = pharma_name
@@ -154,7 +153,9 @@ app.post('/login', staticUserAuth, function(req, res) {
                                                         }                                                        
                                                 console.log("Successfully Login")
 
-                                              //  console.log(res)
+
+   //  cookies .set( "mypharmacy", result[0].email, { httpOnly: false } )                                            
+                                        //    res.cookie('mypharmacy', result[0].email) // options is optional
                                                 res.status(200).send(output)
                                         }
                                         else{
