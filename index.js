@@ -358,61 +358,136 @@ app.get('/order',staticUserAuth,function(req,res){
 })
 
 
-app.post('/uploadPrescription',staticUserAuth, function(req,res){
-	console.log(req.body)
-        const uploadUrl = '/var/www/html/uploads/prescription'
-        var image_url="http://146.185.148.66/uploads/prescription/";
-        var Storage = multer.diskStorage({
-                destination: function (req, file, callback) {
-                        callback(null, uploadUrl);
-                },
-                filename: function (req, file, callback) {
-                	console.log(file.originalname)
-                        image_url += Date.now() + "_" + file.originalname;
-                        callback(null,Date.now() + "_" + file.originalname);
-                }
-        });
-        var upload = multer({ storage: Storage }).array("imgUploader", 3); //Field name and max count
+app.post('/uploadPrescription',staticUserAuth, function(req,resp){
 
-        upload(req, res, function (err) {
-                if (err) {
-                        console.log(err)
-                        return res.end("Something went wrong!");
-                }else{
-                    return res.end("Success!");
-                //var order_userID = req.body.userInfo.userID
-                //var order_userLocation = req.body.userInfo.location
-                console.log(image_url)
+    var image_name = req.files.image.name
+    var uploadUrl = '/var/www/html/uploads/prescription/'+image_name
+    var order_userID=req.body.userID
+    var order_userLocation=req.body.location
+    var image_url = 'http://146.185.148.66/uploads/prescription/'+image_name
+
+    var file;
+
+    if(!req.files)
+    {
+        resp.send("File was not found");
+        return;
+    }
+
+    file = req.files.image;  // here is the field name of the form
+
+    file.mv(uploadUrl, function(err)  //Obvious Move function
+        {
+              //console.log(err)
+        });
+
                 MongoClient.connect(url, function(err, db) {
                         if (err) throw err;
                         var order = {
-                             //   userID: order_userID,
-                           //     location: order_userLocation,
-                            //    order: image_url,
+                                userID: order_userID,
+                                location: order_userLocation,
+                                order: image_url,
                         };
                         db.collection("orders").insertOne(order, function(err, res) {
                                 if (err){
                                         throw err
                                 }else{
+                                     res.status(200).send("image Uploaded")
+                                    console.log(res)
+                              //      res.send("File Uploaded")
 
-/*                        request('http://www.google.com', function (error, response, body) {
-                            if (!error && response.statusCode == 200) {
-                                console.log(body) // Print the google web page
-                            }
-                        })*/
                     }
+                  
+                })
+                        db.close();
+        });
+
+
+resp.status(200).send("image Uploaded")
+})
+
+
+
+app.post('/reportPharmacy',staticUserAuth, function(req,res){
+
+			var report_userID = req.body.userID
+			var report_pharmacyID = req.body.pharmacyID
+			var report_text = req.body.report
+                MongoClient.connect(url, function(err, db) {
+                        if (err) throw err;
+                        var report = {
+                               userID: report_userID,
+                               pharmacyID: report_pharmacyID,
+                               report: report_text,
+                        };
+                        db.collection("report").insertOne(report, function(err, res) {
+                                if (err){
+                                        throw err
+                                }else{
+                                	
+                                }
                     db.close();
                 })
         });
-        }
-    });
+        
 
 
 
 })
 
+app.post('/addRating',staticUserAuth, function(req,res){
+
+			var rate_userID = req.body.userID
+			var rate_pharmacyID = req.body.pharmacyID
+			var pharmacy_rate = req.body.rate
+                MongoClient.connect(url, function(err, db) {
+                        if (err) throw err;
+                        var rating = {
+                               userID: rate_userID,
+                               pharmacyID: rate_pharmacyID,
+                               rate: pharmacy_rate,
+                        };
+                        db.collection("rating").insertOne(rating, function(err, res) {
+                                if (err){
+                                        throw err
+                                }else{
+                                	res.status(200).send("Success !")
+                                }
+                    db.close();
+                })
+        });
+        
 
 
+
+})
+
+app.post('/pharmacyRating',staticUserAuth, function(req,res){
+
+			var rating_userID = req.body.userID
+			var rating_pharmacyID = req.body.pharmacyID
+			       	
+			       	MongoClient.connect(url, function(err, db) {
+                        if (err) throw err;
+                        db.collection('rating').find({userID:rating_userID , pharmacyID: rating_pharmacyID}).toArray(function(err, result){
+                        	if(err)
+                        		throw err
+                        	else{
+                        		var rate = {
+                        			rating: result.rate
+                        		}
+                        		res.status(200).send(rate)
+                        	}
+                        	 db.close();
+                        	})
+                        })
+
+        
+        
+
+
+
+})
 app.listen(3000, function() {
     console.log("Listening!")
 })

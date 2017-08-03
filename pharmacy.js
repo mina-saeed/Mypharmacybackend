@@ -56,7 +56,7 @@ app.post('/register', staticUserAuth, function(req, res) {
                 var pharma_category = null
                 var pharma_tel = req.body.telephone
                 var pharma_mobile = req.body.mobile
-                var pharma_active = 0
+                var pharma_active = req.body.active
 
                 MongoClient.connect(url, function(err, db) {
 
@@ -138,18 +138,13 @@ app.post('/login', staticUserAuth, function(req, res) {
                                                 res.send("Error !!")
                                         }
                                         if(result.length >0){
-                                                let options = {
-                                                    maxAge: 1000 * 60 * 1000,
-                                                    httpOnly: false, // The cookie only accessible by the web server
-                                                    }
-
-
 
                                                         session_set.email = pharma_name
                                                         var output = {
                                                             id: result[0]._id,
                                                             email:result[0].email,
-                                                            username: result[0].name
+                                                            username: result[0].name,
+                                                            deliverTo: result[0].deliverTo
                                                         }                                                        
                                                 console.log("Successfully Login")
 

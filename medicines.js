@@ -50,7 +50,6 @@ app.get('/all', staticUserAuth, function(req, res) {
 
 /*--------------------------- Start Of create new medicine ------------------------------------*/
 app.post('/new', staticUserAuth, function(req, res) {
-        // console.log(req)
         var medicine_name = req.body.name
         var medicine_category = req.body.category
         var medicine_description = req.body.description
@@ -66,18 +65,19 @@ app.post('/new', staticUserAuth, function(req, res) {
                                 res.send("Error")
                         }
                         if(result.length >0){
-                                console.log(result)
                                 res.send("Medicine already exists")
                         }
                         else{
 
                                 var medicine={
-                                        name: medicine_name,
-                                        category: medicine_category,
-                                        description: medicine_description,
-                                        barcode : medicine_barcode,
-                                        price: medicine_price,
-                                        milligrams : medicine_milligrams
+                                            barcode:req.body.barcode,
+                                            name_english:req.body.name_english,
+                                            name_ar:req.body.name_ar,
+                                            english_description: req.body.english_description,
+                                            arabic_description: req.body.arabic_description,
+                                            price: req.body.price,
+                                            milligrams: req.body.milligrams,
+                                            category: req.body.category
                                 };
                         
                         db.collection('medicines').insertOne(medicine , function(err, output){

@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const MongoClient = require('mongodb').MongoClient;
 const url = "mongodb://localhost:27017/mypharmacy";
 const basicAuth = require('./basicAuth.js')
-
+const mongo = require('mongodb')
 var app = express()
 
 
@@ -29,12 +29,13 @@ var staticUserAuth = basicAuth({
 app.get('/search/:keyword', staticUserAuth, function(req, res) {
 
         var search_keyword = req.params.keyword
+        console.log(search_keyword)
         var arabic = /[\u0600-\u06FF]/;
         var is_arabic = arabic.test(search_keyword)
         if(is_arabic){
                 MongoClient.connect(url, function(err, db) {
 
-                        db.collection('medicines').find({"name.arabic.name": {$regex: search_keyword}}).toArray(function(err, result){
+                        db.collection('medicines').find({name_ar: {$regex: search_keyword}}).toArray(function(err, result){
                                 if(err){
                                         res.send("Error")
                                 }
@@ -43,9 +44,9 @@ app.get('/search/:keyword', staticUserAuth, function(req, res) {
                                         result.forEach(function(item){
                                                 var temp_json = {};
                                                 temp_json['id'] = item._id
-                                                temp_json['name'] = item.name.arabic.name
-                                                temp_json['description'] = item.description.arabic.desc
-                                                temp_json['category'] = item.category.arabic.name
+                                                temp_json['name'] = item.name_ar
+                                                temp_json['description'] = item.arabic_description
+                                                temp_json['category'] = item.category
                                                 temp_json['barcode'] = item.barcode
                                                 temp_json['milligrams'] = item.milligrams
                                                 temp_json['price'] = item.price
@@ -60,7 +61,8 @@ app.get('/search/:keyword', staticUserAuth, function(req, res) {
                 });
         }else{
                 MongoClient.connect(url, function(err, db) {
-                        db.collection('medicines').find({"name.english.name": {$regex: search_keyword}}).toArray(function(err, result){
+
+                        db.collection('medicines').find({name_english: {$regex: search_keyword}}).toArray(function(err, result){
                                 if(err){
                                         res.send("Error")
                                 }
@@ -69,9 +71,9 @@ app.get('/search/:keyword', staticUserAuth, function(req, res) {
                                         result.forEach(function(item){
                                                 var temp_json = {};
                                                 temp_json['id'] = item._id
-                                                temp_json['name'] = item.name.english.name
-                                                temp_json['description'] = item.description.english.desc
-                                                temp_json['category'] = item.category.english.name
+                                                temp_json['name'] = item.name_english
+                                                temp_json['description'] = item.english_description
+                                                temp_json['category'] = item.category
                                                 temp_json['barcode'] = item.barcode
                                                 temp_json['milligrams'] = item.milligrams
                                                 temp_json['price'] = item.price
@@ -99,7 +101,7 @@ app.get('/search/category/:keyword', staticUserAuth, function(req, res) {
         if(is_arabic){
                 MongoClient.connect(url, function(err, db) {
 
-                        db.collection('medicines').find({"category.arabic.name": {$regex: search_keyword}}).toArray(function(err, result){
+                        db.collection('medicines').find({"category": {$regex: search_keyword}}).toArray(function(err, result){
                                 if(err){
                                         res.send("Error")
                                 }
@@ -108,9 +110,9 @@ app.get('/search/category/:keyword', staticUserAuth, function(req, res) {
                                         result.forEach(function(item){
                                                 var temp_json = {};
                                                 temp_json['id'] = item._id
-                                                temp_json['name'] = item.name.arabic.name
-                                                temp_json['description'] = item.description.arabic.desc
-                                                temp_json['category'] = item.category.arabic.name
+                                                temp_json['name'] = item.name_ar
+                                                temp_json['description'] = item.arabic_description
+                                                temp_json['category'] = item.category
                                                 temp_json['barcode'] = item.barcode
                                                 temp_json['milligrams'] = item.milligrams
                                                 temp_json['price'] = item.price
@@ -125,7 +127,7 @@ app.get('/search/category/:keyword', staticUserAuth, function(req, res) {
                 });
         }else{
                 MongoClient.connect(url, function(err, db) {
-                        db.collection('medicines').find({"category.english.name": {$regex: search_keyword}}).toArray(function(err, result){
+                        db.collection('medicines').find({"category": {$regex: search_keyword}}).toArray(function(err, result){
                                 if(err){
                                         res.send("Error")
                                 }
@@ -134,9 +136,9 @@ app.get('/search/category/:keyword', staticUserAuth, function(req, res) {
                                         result.forEach(function(item){
                                                 var temp_json = {};
                                                 temp_json['id'] = item._id
-                                                temp_json['name'] = item.name.english.name
-                                                temp_json['description'] = item.description.english.desc
-                                                temp_json['category'] = item.category.english.name
+                                                temp_json['name'] = item.name_english
+                                                temp_json['description'] = item.english_description
+                                                temp_json['category'] = item.category
                                                 temp_json['barcode'] = item.barcode
                                                 temp_json['milligrams'] = item.milligrams
                                                 temp_json['price'] = item.price
@@ -157,7 +159,7 @@ app.get('/search/category/:keyword', staticUserAuth, function(req, res) {
 
 
 /******************************* Start Of Search catgeory Endpoint ****************************************************/
-app.get('/search/barcode/:keyword', staticUserAuth, function(req, res) {
+app.get('/searchBarcode/:keyword', staticUserAuth, function(req, res) {
 
         var search_keyword = req.params.keyword
 
@@ -168,26 +170,68 @@ app.get('/search/barcode/:keyword', staticUserAuth, function(req, res) {
                                         res.send("Error")
                                 }
                                 if(result.length >0){
-                                        var english_result = new Array()
+                                        var medicine_result = new Array()
                                         result.forEach(function(item){
                                                 var temp_json = {};
                                                 temp_json['id'] = item._id
-                                                temp_json['name'] = item.name.english.name
-                                                temp_json['description'] = item.description.english.desc
-                                                temp_json['category'] = item.category.english.name
+                                                temp_json['name_ar'] = item.name_ar
+                                                temp_json['description_ar'] = item.arabic_description
+                                                temp_json['category'] = item.category
                                                 temp_json['barcode'] = item.barcode
                                                 temp_json['milligrams'] = item.milligrams
                                                 temp_json['price'] = item.price
-                                                english_result.push(temp_json)
+                                                temp_json['name_en'] = item.name_english
+                                                temp_json['description_en'] = item.english_description
+                                                medicine_result.push(temp_json)
                                         })
-                                        res.status(200).send(english_result)
+                                        res.status(200).send(medicine_result)
                                 }
                                 else{
-                                        res.send("sorry , no results match this barcode")
+                                        res.send("No medicines match this barcode")
                                 }
                         })
                 });
 
+   
+})
+/*******************************************End Of search category Endpoint ***************************/
+
+
+
+/******************************* Start Of Search By ID Endpoint ****************************************************/
+app.get('/searchID/:id', staticUserAuth, function(req, res) {
+        var medicineID = req.params.id
+
+                MongoClient.connect(url, function(err, db) {
+
+                        db.collection('medicines').find({_id: new mongo.ObjectID (medicineID) }).toArray(function(err, result){
+                                if(err){
+                                        res.send("Error")
+                                }
+                                if(result.length >0){
+                                        var medicine_result = new Array()
+                                        result.forEach(function(item){
+                                                var temp_json = {};
+                                                temp_json['id'] = item._id
+                                                temp_json['name_ar'] = item.name_ar
+                                                temp_json['description_ar'] = item.arabic_description
+                                                temp_json['category'] = item.category
+                                                temp_json['barcode'] = item.barcode
+                                                temp_json['milligrams'] = item.milligrams
+                                                temp_json['price'] = item.price
+
+                                                temp_json['name_en'] = item.name_english
+                                                temp_json['description_en'] = item.english_description
+                                                medicine_result.push(temp_json)
+                                        })
+                                        res.status(200).send(medicine_result)
+                                }
+                                else{
+                                        res.send("No medicines Found")
+                                }
+                        })
+                });
+        
    
 })
 /*******************************************End Of search category Endpoint ***************************/
