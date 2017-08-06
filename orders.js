@@ -59,18 +59,7 @@ console.log("User Connected")
 ioFirst.on('connection', (socket) => {
 console.log("first connected")
 });
-ioSecond.on('connection', (socket) => {
-console.log("Second Connected")
-});
-ioThird.on('connection', (socket) => {
-console.log("Third Connected")
-});
-ioFourth.on('connection', (socket) => {
-console.log("ioFourth Connected")
-});
-ioFifth.on('connection', (socket) => {
-console.log("Fifth Connected")
-});
+
 ioOrderConfirm.on('connection', (socket) => {
 console.log("ioOrderConfirm Connected")
 });
@@ -284,85 +273,10 @@ http.listen(3008, () => {
 httpFirst.listen(3010, () => {
   console.log('started on port 3010');
 });
-httpSecond.listen(3011, () => {
-  console.log('started on port 3011');
-});
 
-httpThird.listen(3012, () => {
-  console.log('started on port 3012');
-});
-httpFourth.listen(3013, () => {
-  console.log('started on port 3013');
-});
-httpFifth.listen(3014, () => {
-  console.log('started on port 3014');
-});
 httpOrderConfirm.listen(3015, () => {
   console.log('started on port 5000');
 });
 app.listen(3009, function() {
     console.log("Listening!")
 })
-
-function secondPriorty(){
-    var secondPrOrders = []
-    MongoClient.connect(url, function(err, db) {
-
-        if (err) throw err;
-
-        db.collection("orders").find({confirmed:0}).toArray(function(err, AllNewOrders){
-            if(secondPh.length>0){
-                AllNewOrders.forEach(function(item){
-                    secondPrOrders.push(item)
-                })
-                ioSecond.emit('second',{ data:secondPh , orders: secondPrOrders});
-                secondPh=[]
-                secondPrOrders=[]
-              //  orders=[]
-            }
-        })
-    })
-
-}
-
-io.on('connection', (socket) => {
-
-console.log("User Data")
-    MongoClient.connect(url, function(err, db) {
-
-        if (err) throw err;
-        	else{
-        db.collection("orders").find({confirmed:0}).toArray(function(err, a){
-        		if(err){
-        			throw err
-        		}else{
-            if(a.length>0){
-                    io.emit('startAllOrders',{orders: a});
-               }
-               
-
-            }
-
-            
-        
-        })
-    }
-    })
-});
-
-
-/*onStart()*/
-//setInterval(onStart, 5000);
-
-
-setInterval(secondPriorty, 30000);
-
-function getCookie(name) {
-    var pattern = RegExp(name + "=.[^;]*")
-    matched = document.cookie.match(pattern)
-    if(matched){
-        var cookie = matched[0].split('=')
-        return cookie[1]
-    }
-    return false
-    }
