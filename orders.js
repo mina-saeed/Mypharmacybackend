@@ -151,6 +151,30 @@ app.get('/allOrders/:userCookie', staticUserAuth, function(req, res) {
       });
 
 
+        app.get('/allOrders', staticUserAuth, function(req, res) {
+
+            var unconfirmedOrders = []
+
+            MongoClient.connect(url, function(err, db) {
+
+                db.collection("orders").find({confirmed :0}).toArray(function(err, allExistOrders){
+
+                    if (err)
+                        throw err
+                    else{
+
+                        if(allExistOrders.length>0){
+
+                            res.send({allOrders:allExistOrders})
+                        }else{
+                            res.send("No Orders ")
+                        }
+                    }
+                })
+            });
+        });
+
+
 
 var secondPh=[]
 //var secondOrder=[]
@@ -211,14 +235,15 @@ var secondPh=[]
 
                                                                 }
                                                         }
-                                                        console.log(order)
                                                         ioFirst.emit('first',{data:existPharmacies , orders:order});
+
                                         })
                                         db.close();
                                 }
                         })
 
                 })
+                  res.send("Order Saved")          
                 })
 
                 app.post('/confirmOrder',staticUserAuth, function(req,res){
@@ -244,16 +269,8 @@ var secondPh=[]
                 					if(err) {throw err}
                 						else{
                 							
-                							db.collection('pharmacy').find({email: orderPharmacy}).toArray(function(err, pharma){
-                									if(err){
-                										throw err
-                									}else{
-
-                											ioOrderConfirm.emit('pharmcyConfirmed',{order:orderID});
-                										res.status(200).send({order:orderID})
-                									}
-                								
-                							})
+                                                        //  ioOrderConfirm.emit('pharmcyConfirmed',{order:orderID});
+                                                        res.status(200).send({allOrders:orderID})
                 							
                 						}
                 					})

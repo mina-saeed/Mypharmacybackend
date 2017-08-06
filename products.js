@@ -6,7 +6,7 @@ const mongo = require('mongodb')
 const MongoClient = require('mongodb').MongoClient;
 const url = "mongodb://localhost:27017/mypharmacy";
 const basicAuth = require('./basicAuth.js')
-
+const fileUpload = require('express-fileupload');
 
 var app = express()
 
@@ -17,7 +17,7 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 
 app.use(cors())
-
+app.use(fileUpload());
 var staticUserAuth = basicAuth({
         users: {
                 'admin': '123456'
@@ -55,9 +55,15 @@ app.get('/all', staticUserAuth, function(req, res) {
 /*******************************************End Of All Products Endpoint ***************************/
 
 
+
+
+
+
+
 /*--------------------------- Start Of create new product ------------------------------------*/
 app.post('/new', staticUserAuth, function(req, res) {
-   // console.log(req)
+
+		console.log(req)
     var beauty_name = req.body.name
     var beauty_category = req.body.category
     var beauty_subCategory = req.body.sub
@@ -66,6 +72,27 @@ app.post('/new', staticUserAuth, function(req, res) {
     var beauty_price = req.body.price
     var beauty_pharmaID = req.body.pharmacyID
     var beauty_creator = req.body.creator
+
+
+    var image_name = req.files.image.name
+    var uploadUrl = '/var/www/html/uploads/products/'+image_name
+    var image_url = 'http://146.185.148.66/uploads/products/'+image_name
+
+    var file;
+
+    if(!req.files)
+    {
+        resp.send("File was not found");
+        return;
+    }
+
+    file = req.files.image;  // here is the field name of the form
+
+    file.mv(uploadUrl, function(err)  //Obvious Move function
+        {
+              //console.log(err)
+        });
+
 MongoClient.connect(url, function(err, db) {    
     db.collection('beauty').find({barcode: beauty_barcode}).toArray(function(err, result){
 
@@ -84,6 +111,7 @@ MongoClient.connect(url, function(err, db) {
                 barcode : beauty_barcode,
                 description: beauty_description,
                 price : beauty_price,
+                ProductImage: image_url,
                 pharmacyID: beauty_pharmaID,
 
             };
@@ -101,7 +129,8 @@ MongoClient.connect(url, function(err, db) {
         }
     })
                         
-   });   
+   });
+   
 })
 /*--------------------------- end of create new product ------------------------------------*/
 

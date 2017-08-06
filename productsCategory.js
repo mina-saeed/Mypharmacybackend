@@ -26,10 +26,28 @@ var staticUserAuth = basicAuth({
 
 /*--------------------------- Start Of create new category ------------------------------------*/
 app.post('/new', staticUserAuth, function(req, res) {
-        // console.log(req)
-        var category_name = req.body.name
-        var category_description = req.body.description
 
+
+    var category_name = req.body.name
+    var category_description = req.body.description
+    var image_name = req.files.image.name
+    var uploadUrl = '/var/www/html/uploads/productCategory/'+image_name
+    var image_url = 'http://146.185.148.66/uploads/productCategory/'+image_name
+
+    var file;
+
+    if(!req.files)
+    {
+        resp.send("File was not found");
+        return;
+    }
+
+    file = req.files.image;  // here is the field name of the form
+
+    file.mv(uploadUrl, function(err)  //Obvious Move function
+        {
+              //console.log(err)
+        });
 
         MongoClient.connect(url, function(err, db) {    
                 db.collection('productCategory').find({name: category_name}).toArray(function(err, result){
@@ -46,6 +64,7 @@ app.post('/new', staticUserAuth, function(req, res) {
                                 var category={
                                         name: category_name,
                                         description: category_description,
+                                        CategoryImage: image_url
                                 };
                         
                         db.collection('productCategory').insertOne(category , function(err, output){
@@ -59,6 +78,7 @@ app.post('/new', staticUserAuth, function(req, res) {
                 }
         })
         });
+
 })
 /*--------------------------- end of create new category ------------------------------------*/
 
@@ -94,11 +114,32 @@ app.get('/all', staticUserAuth, function(req, res) {
 
 /*--------------------------- Start Of create new sub-category ------------------------------------*/
 app.post('/addSubCategory', staticUserAuth, function(req, res) {
-        // console.log(req)
-        var subCategory_name = req.body.name
-        var subCategory_catID = req.body.catID
-        var subCategory_description = req.body.description
 
+
+
+
+
+    var subCategory_name = req.body.name
+    var subCategory_catID = req.body.catID
+    var subCategory_description = req.body.description
+    var image_name = req.files.image.name
+    var uploadUrl = '/var/www/html/uploads/productCategory/'+image_name
+    var image_url = 'http://146.185.148.66/uploads/productCategory/'+image_name
+
+    var file;
+
+    if(!req.files)
+    {
+        resp.send("File was not found");
+        return;
+    }
+
+    file = req.files.image;  // here is the field name of the form
+
+    file.mv(uploadUrl, function(err)  //Obvious Move function
+        {
+              //console.log(err)
+        });
 
         MongoClient.connect(url, function(err, db) {    
                 db.collection('productSubCategory').find({name: subCategory_name}).toArray(function(err, result){
@@ -116,6 +157,7 @@ app.post('/addSubCategory', staticUserAuth, function(req, res) {
                                         catID: subCategory_catID,
                                         name: subCategory_name,
                                         description: subCategory_description,
+                                        subImage: image_url
                                 };
                         
                         db.collection('productSubCategory').insertOne(subCategory , function(err, output){
@@ -129,6 +171,7 @@ app.post('/addSubCategory', staticUserAuth, function(req, res) {
                 }
         })
         });
+
 })
 /*--------------------------- end of create new sub-category ------------------------------------*/
 
