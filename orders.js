@@ -143,7 +143,7 @@ app.get('/allOrders/:userCookie', staticUserAuth, function(req, res) {
         app.get('/allOrders', staticUserAuth, function(req, res) {
 
             var unconfirmedOrders = []
-
+            var FirstPharmacies =[]
             MongoClient.connect(url, function(err, db) {
 
                 db.collection("orders").find({confirmed :0}).toArray(function(err, allExistOrders){
@@ -154,7 +154,17 @@ app.get('/allOrders/:userCookie', staticUserAuth, function(req, res) {
 
                         if(allExistOrders.length>0){
 
-                            res.send({allOrders:allExistOrders})
+                            db.collection('pharmacy').find({}).toArray(function(err, allPharmacies){
+                                if(err){
+                                    throw err
+                                }else{
+                                    FirstPharmacies = allPharmacies
+                                }
+
+
+                            })
+
+                            res.send({allPharmacies:FirstPharmacies, allOrders:allExistOrders})
                         }else{
                             res.send("No Orders ")
                         }
