@@ -169,7 +169,7 @@ app.get('/logout', staticUserAuth ,function(req,res){
 app.get('/allUsers', staticUserAuth,function(req,res){
 
         MongoClient.connect(url, function(err, db) {    
-                db.collection('users').find({type:"none"}).toArray(function(err, result){
+                db.collection('users').find({}).toArray(function(err, result){
 
                         if(err){
                                 res.status(403).send("Error")
@@ -181,7 +181,8 @@ app.get('/allUsers', staticUserAuth,function(req,res){
                                                 temp_json['id'] = user._id
                                                 temp_json['name'] = user.name
                                                 temp_json['email'] = user.email
-                                                temp_json['status'] = user.type
+                                                temp_json['type'] = user.type
+                                                temp_json['active']=user.active
                                                 users.push(temp_json)
                                         })
                                         res.status(200).send(users)
@@ -193,6 +194,33 @@ app.get('/allUsers', staticUserAuth,function(req,res){
         });
 })
 
+app.get('/activeUsers', staticUserAuth,function(req,res){
+
+        MongoClient.connect(url, function(err, db) {    
+                db.collection('users').find({type:"user"}).toArray(function(err, result){
+
+                        if(err){
+                                res.status(403).send("Error")
+                        }
+                        if(result.length >0){
+                                    var users = new Array()
+                                        result.forEach(function(user){
+                                                var temp_json = {};
+                                                temp_json['id'] = user._id
+                                                temp_json['name'] = user.name
+                                                temp_json['email'] = user.email
+                                                temp_json['type'] = user.type
+                                                temp_json['active']=user.active
+                                                users.push(temp_json)
+                                        })
+                                        res.status(200).send(users)
+                        }
+                        else{
+                                res.status(404).send()
+                        }
+                })
+        });
+})
 
 
 
@@ -300,6 +328,37 @@ app.post('/admin/confirmPharmacy', staticUserAuth, function(req, res) {
 })
 /*--------------------------- end of confirm pharmacy ------------------------------------*/
 
+
+/*--------------------------- Start Of Ban pharmacy ------------------------------------*/
+app.post('/banPharmacy', staticUserAuth, function(req, res) {
+
+    var pharmacy_name = req.body.email
+
+    MongoClient.connect(url, function(err, db) {
+        db.collection('pharmacy').update(
+                {email: pharmacy_name},
+                {$set:
+                        {   
+                            category:null,
+                             active:0
+                        }
+                },
+                function(err, result){
+                        if(err) throw err
+                        if(result){
+                                res.send("Pharmacy Deactivated")
+                        }        
+                }
+        )
+                        
+   }); 
+    
+})
+/*--------------------------- end of Ban pharmacy ------------------------------------*/
+
+
+
+
 /*--------------------------- Start Of Confirm pharmacy ------------------------------------*/
 app.post('/admin/confirmAdmin', staticUserAuth, function(req, res) {
 
@@ -324,6 +383,33 @@ app.post('/admin/confirmAdmin', staticUserAuth, function(req, res) {
    });   
 })
 /*--------------------------- end of confirm pharmacy ------------------------------------*/
+
+
+
+/*--------------------------- Start Of Ban User ------------------------------------*/
+app.post('/banUser', staticUserAuth, function(req, res) {
+
+    var user_email = req.body.email
+
+    MongoClient.connect(url, function(err, db) {
+        db.collection('users').update(
+                {email: user_email},
+                {$set:
+                        {
+                            active:0
+                        }
+                },
+                function(err, result){
+                        if(err) throw err
+                        if(result){
+                                res.status(200).send("User deactivated")
+                        }        
+                }
+        )
+                        
+   });   
+})
+/*--------------------------- end of Ba User ------------------------------------*/
 app.listen(3001, function() {
     console.log("Listening To Admin API !")
 })

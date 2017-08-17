@@ -30,7 +30,7 @@ let ioSecond = require('socket.io')(httpSecond);
 let ioThird = require('socket.io')(httpThird);
 let ioFourth = require('socket.io')(httpFourth);
 let ioFifth = require('socket.io')(httpFifth);
-let ioOrderConfirm = require('socket.io')(httpOrderConfirm);
+let ioOrderConfirm = require('socket.io')(httpOrderConfirm, { origins: '*:*'});
 
 
 app.use(bodyParser.json());
@@ -56,9 +56,7 @@ var staticUserAuth = basicAuth({
 io.on('connection', (socket) => {
 console.log("User Connected")
 });
-ioFirst.on('connection', (socket) => {
-console.log("first connected")
-});
+
 
 ioOrderConfirm.on('connection', (socket) => {
 console.log("ioOrderConfirm Connected")
@@ -158,15 +156,16 @@ app.get('/allOrders/:userCookie', staticUserAuth, function(req, res) {
                                 if(err){
                                     throw err
                                 }else{
-                                    FirstPharmacies = allPharmacies
-                                }
+                                   // FirstPharmacies.push(allPharmacies)
 
+                                }
+                               // console.log(allPharmacies)
+                            res.send({allPharmacies:allPharmacies, allOrders:allExistOrders})
 
                             })
 
-                            res.send({allPharmacies:FirstPharmacies, allOrders:allExistOrders})
+
                         }else{
-                            res.send("No Orders ")
                         }
                     }
                 })
@@ -179,31 +178,52 @@ var secondPh=[]
 //var secondOrder=[]
                 app.post('/order/submit',staticUserAuth, function(req,res){
 
-                        var order_userLocation = 'Alharam'
 
+                       // var order_userLocation = 'Alharam'
+                       console.log(req.body)
+                       var user_orderCity = req.body.userInfo.city
+                       var user_orderLocarion = req.body.userInfo.location
+                       var user_orderAddress = req.body.userInfo.street
+                       var user_orderType = req.body.type
+                       var user_order = ""
+                        var uploadUrl = ''
+                        var image_url = ''
+                        if(!req.files){
+                            user_order = req.body.order
+                        }else{
+                            
+                            var image_name = req.files.image.name
+                            uploadUrl = '/var/www/html/uploads/prescription/'+image_name
+                            user_order = 'http://146.185.148.66/uploads/prescription/'+image_name
+                        }
                         MongoClient.connect(url, function(err, db) {
 
                                 if (err) throw err;
 
                                 var order = {
 
-                                        userID: req.body.userID,
-                                        location: order_userLocation,
-                                        order: req.body.user_order,
+                                        userID: req.body.userInfo.userID,
+                                        city: user_orderCity,
+                                        location: user_orderLocarion,
+                                        address: user_orderAddress,
+                                        type: user_orderType,
+                                        order: user_order,
                                         confirmed:0
                                 };
+
                                 db.collection("orders").insertOne(order, function(err, res) {
 
                                         if (err){
                                                 throw err
                                         }else{
+                                            console.log(order)
                                                 var existPharmacies = []
-                                          db.collection('pharmacy').find({city:"Giza"}).toArray(function(err, pharmacies){
+                                          db.collection('pharmacy').find({city:user_orderCity}).toArray(function(err, pharmacies){
                                              				
                                                         for (let i = 0 ; i<pharmacies.length;i++){
                                                         	var deliver = pharmacies[i].deliverTo
 
-                                                                if(deliver.includes(order_userLocation)){
+                                                                if(deliver.includes(user_orderLocarion)){
                                                            
                                                                 	var deliverArray = deliver.split(',')
 
@@ -215,7 +235,7 @@ var secondPh=[]
                                                                 			var val = element[1]
                                                                 			//console.log(val)
 
-                                                                			if(key.trim() === order_userLocation.trim()){
+                                                                			if(key.trim() === user_orderLocarion.trim()){
                                                                 				//console.log("matched")
                                                                 				if(val==1){
 
@@ -234,7 +254,11 @@ var secondPh=[]
 
                                                                 }
                                                         }
+                                                        ioFirst.on('connection', (socket) => {
+															console.log("first connected")
+															});
                                                         ioFirst.emit('first',{data:existPharmacies , orders:order});
+
 
                                         })
                                         db.close();
@@ -250,30 +274,92 @@ var secondPh=[]
                         var orderPharmacy = req.body.pharmacyEmail
                         var orderID = req.body.requestOrder
     					MongoClient.connect(url, function(err, db) {
+
+
+
     						if(err){
     							throw err
     						}else{
-        					db.collection("orders").update(
 
-                				{_id: new mongo.ObjectID (orderID)},
-                				{
-                					$set:
-                					{
-                						pahrmacy: orderPharmacy,
-                						confirmed:1
-                					},
-                				},
-                				function(err, result){
 
-                					if(err) {throw err}
-                						else{
-                							
-                                                        //  ioOrderConfirm.emit('pharmcyConfirmed',{order:orderID});
-                                                        res.status(200).send({allOrders:orderID})
-                							
-                						}
-                					})
+                            db.collection('orders').find({_id: new mongo.ObjectID (orderID) , confirmed:1}).toArray(function(err , result){
+
+                                if(err){
+                                    throw err
+                                }else{
+                                    if(result.length>0){
+                                        res.status(409).send("Sorry , Order already confirmed")
+                                    }else{
+
+
+                                            db.collection("orders").update(
+                                        {_id: new mongo.ObjectID (orderID)},
+                                        {
+                                            $set:
+                                            {
+                                                pahrmacy: orderPharmacy,
+                                                confirmed:1
+                                            },
+                                        },
+                                        function(err, result){
+
+                                            if(err) {throw err}
+                                                else{
+                                                		var userOrder = ''
+                                                        db.collection('pharmacy').find({email: orderPharmacy}).toArray(function(err , ph){
+
+                                                            if(err){
+                                                                throw err
+                                                            }else{
+                                                                var confirmedPharmacy = {
+                                                                    name: ph[0].name,
+                                                                    email:ph[0].email,
+                                                                    deliveryTime: ph[0].time,
+                                                                    location:{
+                                                                        city:ph[0].city,
+                                                                        location: ph[0].location,
+                                                                        street:ph[0].street
+                                                                    }
+                                                                }
+
+													                db.collection("orders").find({_id: new mongo.ObjectID (orderID)}).toArray(function(err, userOrder){
+
+													                    if (err)
+													                        throw err
+													                    else{
+
+													                        if(userOrder.length>0){
+
+													                        		userOrder = userOrder
+													                        }else{
+													                        }
+													                    }
+													                })
+
+
+
+
+                                                            }
+                                                          ioOrderConfirm.emit('pharmacyConfirmed',{pharmacyInfo: confirmedPharmacy, order:orderID});
+                                                          res.status(200).send({allOrders:orderID})
+                                                          db.close()
+                                                        })
+                                            
+                                                        
+                                            
+                                        }
+                                    })
+                                    }
+                                    
+
+                                }
+                            })
+
+
+
+                            
         				}
+                       // db.close()
         				}); 
                 })
 

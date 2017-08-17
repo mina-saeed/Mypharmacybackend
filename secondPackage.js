@@ -41,9 +41,9 @@ var staticUserAuth = basicAuth({
         app.get('/allOrders', staticUserAuth, function(req, res) {
 
             var unconfirmedOrders = []
-            var FirstPharmacies =[]
+            
             MongoClient.connect(url, function(err, db) {
-
+                    var FirstPharmacies =[]
                 db.collection("orders").find({confirmed :0}).toArray(function(err, allExistOrders){
 
                     if (err)
@@ -56,18 +56,19 @@ var staticUserAuth = basicAuth({
                                 if(err){
                                     throw err
                                 }else{
-                                    FirstPharmacies = allPharmacies
+                                    //FirstPharmacies.push(allPharmacies)
                                 }
 
-
+                                res.send({allPharmacies:allPharmacies, allOrders:allExistOrders})
                             })
-
-                            res.send({allPharmacies:FirstPharmacies, allOrders:allExistOrders})
+                             //   console.log(FirstPharmacies)
+                            
                         }else{
                             res.send("No Orders ")
                         }
                     }
                 })
+                /*db.close();*/
             });
         });
 

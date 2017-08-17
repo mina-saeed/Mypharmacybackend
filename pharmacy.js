@@ -184,6 +184,40 @@ app.get('/logout', staticUserAuth ,function(req,res){
 
 /********************************************End logout endpoint **************************/
 
+
+/*-------------------------------- Start Pharmacy History endpoint ---------------------------*/
+
+
+app.get('/pharmacyHistory/:email',staticUserAuth, function(req,res){
+
+            var userID = req.params.email
+                    
+                    MongoClient.connect(url, function(err, db) {
+                        if (err) throw err;
+                        db.collection('orders').find({pahrmacy:email , confirmed:1}).toArray(function(err, result){
+                            if(err)
+                                throw err
+                            else{
+                                if(result.length>0){
+                                    res.status(200).send(result)
+                                }else{
+                                    res.status(404).send("You hve no orders !")
+                                }
+                                
+                            }
+                             db.close();
+                            })
+                        })
+
+})
+
+/*-------------------------------- End Pharmacy History endpoint    ---------------------------*/
+
+
+
+
+
+
 app.listen(3002, function() {
     console.log("Listening To pharmcy API!")
 })

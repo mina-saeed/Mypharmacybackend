@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const MongoClient = require('mongodb').MongoClient;
 const url = "mongodb://localhost:27017/mypharmacy";
 const basicAuth = require('./basicAuth.js')
-
+const mongo = require('mongodb')
 
 var app = express()
 
@@ -29,6 +29,7 @@ app.post('/new', staticUserAuth, function(req, res) {
         // console.log(req)
         var category_name = req.body.name
         var category_description = req.body.description
+        var category_searchable = req.body.searchable
 
 
         MongoClient.connect(url, function(err, db) {    
@@ -46,6 +47,7 @@ app.post('/new', staticUserAuth, function(req, res) {
                                 var category={
                                         name: category_name,
                                         description: category_description,
+                                        searchable: category_searchable
                                 };
                         
                         db.collection('category').insertOne(category , function(err, output){
@@ -161,7 +163,7 @@ app.put('/updateCategory', staticUserAuth,function(req, res){
     var cat_ID = req.body.id
     var category_name = req.body.name
     var category_description = req.body.description
-
+    var category_searchable = req.body.searchable
 
     MongoClient.connect(url, function(err, db) {
         db.collection('category').update(
@@ -170,6 +172,7 @@ app.put('/updateCategory', staticUserAuth,function(req, res){
                         {
                             name: category_name,
                             description: category_description,
+                            searchable: category_searchable
                         },       
                 },
                 function(err, result){

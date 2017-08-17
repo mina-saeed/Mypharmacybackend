@@ -35,7 +35,7 @@ app.get('/search/:keyword', staticUserAuth, function(req, res) {
         if(is_arabic){
                 MongoClient.connect(url, function(err, db) {
 
-                        db.collection('medicines').find({name_ar: {$regex: search_keyword}}).toArray(function(err, result){
+                        db.collection('medicines').find({name_ar: {$regex: search_keyword} , confirmed:1}).toArray(function(err, result){
                                 if(err){
                                         res.send("Error")
                                 }
@@ -62,7 +62,7 @@ app.get('/search/:keyword', staticUserAuth, function(req, res) {
         }else{
                 MongoClient.connect(url, function(err, db) {
 
-                        db.collection('medicines').find({name_english: {$regex: search_keyword}}).toArray(function(err, result){
+                        db.collection('medicines').find({name_english: {$regex: search_keyword} , confirmed:1}).toArray(function(err, result){
                                 if(err){
                                         res.send("Error")
                                 }
@@ -101,7 +101,7 @@ app.get('/search/category/:keyword', staticUserAuth, function(req, res) {
         if(is_arabic){
                 MongoClient.connect(url, function(err, db) {
 
-                        db.collection('medicines').find({"category": {$regex: search_keyword}}).toArray(function(err, result){
+                        db.collection('medicines').find({"category": {$regex: search_keyword} , confirmed:1}).toArray(function(err, result){
                                 if(err){
                                         res.send("Error")
                                 }
@@ -127,7 +127,7 @@ app.get('/search/category/:keyword', staticUserAuth, function(req, res) {
                 });
         }else{
                 MongoClient.connect(url, function(err, db) {
-                        db.collection('medicines').find({"category": {$regex: search_keyword}}).toArray(function(err, result){
+                        db.collection('medicines').find({"category": {$regex: search_keyword} , confirmed:1}).toArray(function(err, result){
                                 if(err){
                                         res.send("Error")
                                 }
@@ -165,7 +165,7 @@ app.get('/searchBarcode/:keyword', staticUserAuth, function(req, res) {
 
                 MongoClient.connect(url, function(err, db) {
 
-                        db.collection('medicines').find({barcode: ''+search_keyword+''}).toArray(function(err, result){
+                        db.collection('medicines').find({barcode: ''+search_keyword+'' , confirmed:1}).toArray(function(err, result){
                                 if(err){
                                         res.send("Error")
                                 }
@@ -204,7 +204,7 @@ app.get('/searchID/:id', staticUserAuth, function(req, res) {
 
                 MongoClient.connect(url, function(err, db) {
 
-                        db.collection('medicines').find({_id: new mongo.ObjectID (medicineID) }).toArray(function(err, result){
+                        db.collection('medicines').find({_id: new mongo.ObjectID (medicineID) , confirmed:1}).toArray(function(err, result){
                                 if(err){
                                         res.send("Error")
                                 }

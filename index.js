@@ -488,6 +488,30 @@ app.post('/pharmacyRating',staticUserAuth, function(req,res){
 
 
 })
+app.get('/userHistory/:id',staticUserAuth, function(req,res){
+
+            var userID = req.params.id
+                    
+                    MongoClient.connect(url, function(err, db) {
+                        if (err) throw err;
+                        db.collection('orders').find({userID:userID , confirmed:1}).toArray(function(err, result){
+                            if(err)
+                                throw err
+                            else{
+                                if(result.length>0){
+                                    res.status(200).send(result)
+                                }else{
+                                    res.status(404).send("You hve no orders !")
+                                }
+                                
+                            }
+                             db.close();
+                            })
+                        })
+
+})
+
+
 app.listen(3000, function() {
     console.log("Listening!")
 })

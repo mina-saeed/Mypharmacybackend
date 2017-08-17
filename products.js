@@ -63,12 +63,14 @@ app.get('/all', staticUserAuth, function(req, res) {
 /*--------------------------- Start Of create new product ------------------------------------*/
 app.post('/new', staticUserAuth, function(req, res) {
 
-		console.log(req)
-    var beauty_name = req.body.name
+	/*	console.log(req)*/
+    var beauty_name_en = req.body.name_en
+    var beauty_name_ar = req.body.name_ar
     var beauty_category = req.body.category
     var beauty_subCategory = req.body.sub
     var beauty_barcode = req.body.barcode
-    var beauty_description = req.body.description
+    var beauty_description_en = req.body.description_en
+    var beauty_description_ar = req.body.description_ar
     var beauty_price = req.body.price
     var beauty_pharmaID = req.body.pharmacyID
     var beauty_creator = req.body.creator
@@ -105,11 +107,13 @@ MongoClient.connect(url, function(err, db) {
         }
         else{
             var beauty={
-                name: beauty_name,
+                name_en: beauty_name_en,
+                name_ar: beauty_name_ar,
                 category: beauty_category,
                 subCategory: beauty_subCategory,
                 barcode : beauty_barcode,
-                description: beauty_description,
+                description_ar: beauty_description_ar,
+                description_en: beauty_description_en,
                 price : beauty_price,
                 ProductImage: image_url,
                 pharmacyID: beauty_pharmaID,
@@ -137,15 +141,37 @@ MongoClient.connect(url, function(err, db) {
 /*----------------------- Start of Update product--------------------------*/
 app.put('/updateProduct', staticUserAuth,function(req, res){
 
-    var productID = req.body.id
-    var beauty_name = req.body.name
+    /*  console.log(req)*/
+    var beauty_name_en = req.body.name_en
+    var beauty_name_ar = req.body.name_ar
     var beauty_category = req.body.category
     var beauty_subCategory = req.body.sub
     var beauty_barcode = req.body.barcode
-    var beauty_description = req.body.description
+    var beauty_description_en = req.body.description_en
+    var beauty_description_ar = req.body.description_ar
     var beauty_price = req.body.price
     var beauty_pharmaID = req.body.pharmacyID
     var beauty_creator = req.body.creator
+    var productID = req.body.productID
+
+    var image_name = req.files.image.name
+    var uploadUrl = '/var/www/html/uploads/products/'+image_name
+    var image_url = 'http://146.185.148.66/uploads/products/'+image_name
+
+    var file;
+
+    if(!req.files)
+    {
+        resp.send("File was not found");
+        return;
+    }
+
+    file = req.files.image;  // here is the field name of the form
+
+    file.mv(uploadUrl, function(err)  //Obvious Move function
+        {
+              //console.log(err)
+        });
     
 
     MongoClient.connect(url, function(err, db) {
@@ -153,14 +179,16 @@ app.put('/updateProduct', staticUserAuth,function(req, res){
                 {_id: new mongo.ObjectID (productID)},
                 {$set:
                         {
-                            name: beauty_name,
+                            name_en: beauty_name_en,
+                            name_ar: beauty_name_ar,
                             category: beauty_category,
                             subCategory: beauty_subCategory,
                             barcode : beauty_barcode,
-                            description: beauty_description,
+                            description_ar: beauty_description_ar,
+                            description_en: beauty_description_en,
                             price : beauty_price,
+                            ProductImage: image_url,
                             pharmacyID: beauty_pharmaID,
-                            creator: beauty_creator
                         },       
                 },
                 function(err, result){
@@ -180,9 +208,9 @@ app.put('/updateProduct', staticUserAuth,function(req, res){
 /*---------------------------------- End Of Update product----------------*/
 
 /*----------------------- Start of Delete product--------------------------*/
-app.delete('/deleteProduct', staticUserAuth,function(req, res){
+app.delete('/deleteProduct/:id', staticUserAuth,function(req, res){
 
-    var productID = req.query.id
+    var productID = req.params.id
     
     MongoClient.connect(url, function(err, db) {
         db.collection('beauty').deleteOne({_id: new mongo.ObjectID (productID) } , function(err, obj){

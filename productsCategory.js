@@ -2,10 +2,11 @@
 const cors = require('cors')
 const express = require('express');
 const bodyParser = require("body-parser");
+const mongo = require('mongodb')
 const MongoClient = require('mongodb').MongoClient;
 const url = "mongodb://localhost:27017/mypharmacy";
 const basicAuth = require('./basicAuth.js')
-
+const fileUpload = require('express-fileupload');
 
 var app = express()
 
@@ -16,7 +17,7 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 
 app.use(cors())
-
+app.use(fileUpload());
 var staticUserAuth = basicAuth({
         users: {
                 'admin': '123456'
@@ -24,12 +25,15 @@ var staticUserAuth = basicAuth({
         challenge: true
 })
 
+
 /*--------------------------- Start Of create new category ------------------------------------*/
 app.post('/new', staticUserAuth, function(req, res) {
 
 
-    var category_name = req.body.name
-    var category_description = req.body.description
+    var category_name_ar = req.body.name_ar
+    var category_name = req.body.name_en
+    var category_description_ar = req.body.description_ar
+    var category_description_en = req.body.description_en
     var image_name = req.files.image.name
     var uploadUrl = '/var/www/html/uploads/productCategory/'+image_name
     var image_url = 'http://146.185.148.66/uploads/productCategory/'+image_name
@@ -62,8 +66,10 @@ app.post('/new', staticUserAuth, function(req, res) {
                         else{
 
                                 var category={
-                                        name: category_name,
-                                        description: category_description,
+                                        name_ar: category_name_ar,
+                                        name_en: category_name,
+                                        description_ar: category_description_ar,
+                                        description_en: category_description_en,
                                         CategoryImage: image_url
                                 };
                         
@@ -119,12 +125,14 @@ app.post('/addSubCategory', staticUserAuth, function(req, res) {
 
 
 
-    var subCategory_name = req.body.name
+    var subCategory_name_ar = req.body.name_ar
+    var subCategory_name = req.body.name_en
     var subCategory_catID = req.body.catID
-    var subCategory_description = req.body.description
+    var subCategory_description_ar = req.body.description_ar
+    var subCategory_description = req.body.description_en
     var image_name = req.files.image.name
-    var uploadUrl = '/var/www/html/uploads/productCategory/'+image_name
-    var image_url = 'http://146.185.148.66/uploads/productCategory/'+image_name
+    var uploadUrl = '/var/www/html/uploads/productSubCategory/'+image_name
+    var image_url = 'http://146.185.148.66/uploads/productSubCategory/'+image_name
 
     var file;
 
@@ -155,8 +163,11 @@ app.post('/addSubCategory', staticUserAuth, function(req, res) {
 
                                 var subCategory={
                                         catID: subCategory_catID,
-                                        name: subCategory_name,
-                                        description: subCategory_description,
+                                        name_ar: subCategory_name_ar,
+                                        name_en: subCategory_name,
+
+                                        description_ar: subCategory_description_ar,
+                                        description_en: subCategory_description,
                                         subImage: image_url
                                 };
                         
@@ -177,10 +188,9 @@ app.post('/addSubCategory', staticUserAuth, function(req, res) {
 
 /*--------------------------- Start Of Get Product sub-categories ------------------------------------*/
 app.get('/allSubCategories/:catID', staticUserAuth, function(req, res) {
-        // console.log(req)
-        var category_id = parseInt(req.params.catID)
+        var category_id =req.params.catID
 
-            console.log(category_id)
+            //console.log(category_id)
         MongoClient.connect(url, function(err, db) {    
                 db.collection('productSubCategory').find({catID: category_id}).toArray(function(err, result){
 
@@ -189,10 +199,11 @@ app.get('/allSubCategories/:catID', staticUserAuth, function(req, res) {
                         }
                         if(result.length >0){
                                 console.log(result)
-                                res.send(result)
+                                // res.send(result)
+                                 res.status(200).send(result)
                         }
                         else{
-                            res.status(404).send(result)
+                           res.status(404).send("No data found")
                 }
         })
         });
@@ -209,9 +220,30 @@ app.get('/allSubCategories/:catID', staticUserAuth, function(req, res) {
 /*----------------------- Start of Update Product Category --------------------------*/
 app.put('/updateCategory', staticUserAuth,function(req, res){
 
+
+
+    var category_name_ar = req.body.name_ar
+    var category_name = req.body.name_en
+    var category_description_ar = req.body.description_ar
+    var category_description_en = req.body.description_en
+    var image_name = req.files.image.name
+    var uploadUrl = '/var/www/html/uploads/productCategory/'+image_name
+    var image_url = 'http://146.185.148.66/uploads/productCategory/'+image_name
     var cat_ID = req.body.id
-    var category_name = req.body.name
-    var category_description = req.body.description
+    var file;
+
+    if(!req.files)
+    {
+        resp.send("File was not found");
+        return;
+    }
+
+    file = req.files.image;  // here is the field name of the form
+
+    file.mv(uploadUrl, function(err)  //Obvious Move function
+        {
+              //console.log(err)
+        });
 
 
     MongoClient.connect(url, function(err, db) {
@@ -219,8 +251,11 @@ app.put('/updateCategory', staticUserAuth,function(req, res){
                 {_id: new mongo.ObjectID (cat_ID)},
                 {$set:
                         {
-                            name: category_name,
-                            description: category_description,
+                            name_en: category_name_en,
+                            name_ar: category_name_ar,
+
+                            description_ar: category_description_ar,
+                            description_en: category_description_en
                         },       
                 },
                 function(err, result){
@@ -242,8 +277,8 @@ app.put('/updateCategory', staticUserAuth,function(req, res){
 /*----------------------- Start of Delete product Category --------------------------*/
 app.delete('/deleteCategory/:id', staticUserAuth,function(req, res){
 
-    var cat_ID = req.body.id
-    
+    var cat_ID = req.params.id
+    	console.log(cat_ID)
     MongoClient.connect(url, function(err, db) {
         db.collection('productCategory').remove({_id: new mongo.ObjectID (cat_ID) } , function(err, obj){
 
@@ -266,9 +301,33 @@ app.delete('/deleteCategory/:id', staticUserAuth,function(req, res){
 /*----------------------- Start of Update product Sub-Category --------------------------*/
 app.put('/updateSubCategory', staticUserAuth,function(req, res){
 
+
     var sub_ID = req.body.id
-    var subCategory_name = req.body.name
-    var subCategory_description = req.body.description
+    var subCategory_name_ar = req.body.name_ar
+    var subCategory_name_en = req.body.name_en
+    var subCategory_catID = req.body.catID
+    var subCategory_description_ar = req.body.description_ar
+    var subCategory_description_en = req.body.description_en
+    var image_name = req.files.image.name
+    var uploadUrl = '/var/www/html/uploads/productSubCategory/'+image_name
+    var image_url = 'http://146.185.148.66/uploads/productSubCategory/'+image_name
+
+    var file;
+
+    if(!req.files)
+    {
+        resp.send("File was not found");
+        return;
+    }
+
+    file = req.files.image;  // here is the field name of the form
+
+    file.mv(uploadUrl, function(err)  //Obvious Move function
+        {
+              //console.log(err)
+        });
+
+
 
 
     MongoClient.connect(url, function(err, db) {
@@ -276,8 +335,13 @@ app.put('/updateSubCategory', staticUserAuth,function(req, res){
                 {_id: new mongo.ObjectID (sub_ID)},
                 {$set:
                         {
-                            name: subCategory_name,
-                            description: subCategory_description,
+                            catID: subCategory_catID,
+                            name_ar: subCategory_name_ar,
+                            name_en: subCategory_name,
+
+                            description_ar: subCategory_description_ar,
+                            description_en: subCategory_description,
+                            subImage: image_url
                         },       
                 },
                 function(err, result){
@@ -299,8 +363,8 @@ app.put('/updateSubCategory', staticUserAuth,function(req, res){
 /*----------------------- Start of Delete product Sub-Category  --------------------------*/
 app.delete('/deleteSubCategory/:id', staticUserAuth,function(req, res){
 
-    var sub_ID = req.body.id
-    
+    var sub_ID = req.params.id
+  
     MongoClient.connect(url, function(err, db) {
         db.collection('productSubCategory').remove({_id: new mongo.ObjectID (sub_ID) } , function(err, obj){
 

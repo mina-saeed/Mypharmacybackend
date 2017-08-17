@@ -56,18 +56,19 @@ var staticUserAuth = basicAuth({
                                 if(err){
                                     throw err
                                 }else{
-                                    FirstPharmacies = allPharmacies
+                                   // FirstPharmacies.push(allPharmacies)
                                 }
 
 
                             })
 
-                            res.send({allPharmacies:FirstPharmacies, allOrders:allExistOrders})
+                            res.send({allPharmacies:allPharmacies, allOrders:allExistOrders})
                         }else{
                             res.send("No Orders ")
                         }
                     }
                 })
+                /*db.close();*/
             });
         });
 
